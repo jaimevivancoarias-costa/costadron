@@ -274,7 +274,7 @@ export default function YTD() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Mes','Vuelos','Ha','KG','Costo','Costo/ha'].map(h => (
+                {['Mes','Vuelos','Ha','KG','Costo','Costo/ha','Costo/vuelo'].map(h => (
                   <th key={h} className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium pr-4">{h}</th>
                 ))}
               </tr>
@@ -288,6 +288,7 @@ export default function YTD() {
                   <td className="py-2 text-xs pr-4">{d.kg.toFixed(0)}</td>
                   <td className="py-2 text-xs font-medium pr-4">{fmt$(d.costo)}</td>
                   <td className="py-2 text-xs pr-4">{fmt$(d.costoHa)}</td>
+		  <td className="py-2 text-xs pr-4">{fmt$(d.vuelos > 0 ? d.costo / d.vuelos : 0)}</td>
                 </tr>
               ))}
             </tbody>
@@ -299,6 +300,7 @@ export default function YTD() {
                 <td className="pt-3 text-xs font-medium">{totalKg.toFixed(0)}</td>
                 <td className="pt-3 text-xs font-medium">{fmt$(totalCosto)}</td>
                 <td className="pt-3 text-xs font-medium">{fmt$(totalHa > 0 ? totalCosto / totalHa : 0)}</td>
+<td className="pt-3 text-xs font-medium">{fmt$(totalVuelos > 0 ? totalCosto / totalVuelos : 0)}</td>
               </tr>
             </tfoot>
           </table>
