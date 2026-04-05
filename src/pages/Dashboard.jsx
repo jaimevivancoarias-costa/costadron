@@ -218,6 +218,29 @@ export default function Dashboard() {
             <div className="text-xs text-gray-400">Los pilotos aún no han registrado vuelos este mes.</div>
           </div>
         )}
+{!cargando && resumen && !resumen.sinDatos && !resumen.cerrado && (
+  <div className="flex flex-col gap-2 mb-5">
+    {!varGuardados && (
+      <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
+        style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
+        <span>⚠</span>
+        <span className="flex-1">Los costos variables de {mesLabel} no están cargados. El reporte no puede cerrarse hasta completarlos.</span>
+      </div>
+    )}
+    {(() => {
+      const hoy = new Date()
+      const ultimoDiaMes = new Date(periodo.anio, periodo.mes, 0)
+      const diasDesdeFinMes = Math.floor((hoy - ultimoDiaMes) / (1000 * 60 * 60 * 24))
+      return diasDesdeFinMes > 5 ? (
+        <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
+          style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
+          <span>⚠</span>
+          <span className="flex-1">{mesLabel} lleva {diasDesdeFinMes} días sin cerrar. Recordá cerrar el mes para congelar los datos.</span>
+        </div>
+      ) : null
+    })()}
+  </div>
+)}
 
         {!cargando && resumen && !resumen.sinDatos && (
           <>

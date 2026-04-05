@@ -5,16 +5,13 @@ import Layout from '../components/Layout'
 
 const REQUIRED = ['fecha', 'cliente_id', 'cantidad_vuelos', 'kg_esparcidos', 'hectareas']
 
-function fmt(n) {
-  return n != null ? Number(n).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'
-}
-
 export default function FormularioJornada() {
   const { usuario } = useAuth()
   const [clientes, setClientes] = useState([])
   const [jornadas, setJornadas] = useState([])
   const [editId, setEditId] = useState(null)
   const [toast, setToast] = useState('')
+  const [toastWarn, setToastWarn] = useState('')
   const [errors, setErrors] = useState({})
 
   const hoy = new Date().toISOString().split('T')[0]
@@ -52,6 +49,31 @@ export default function FormularioJornada() {
 
   const guardar = async () => {
     if (!validate()) return
+
+    if (Number(form.hectareas) <= 0) {
+      setErrors(e => ({ ...e, hectareas: true }))
+      showToast('Las hectáreas deben ser mayor a 0.')
+      return
+    }
+
+    const { data: existente } = await supabase
+      .from('jornadas')
+      .select('id')
+      .eq('fecha', form.fecha)
+      .eq('cliente_id', form.cliente_id)
+      .neq('id', editId || '00000000-0000-0000-0000-000000000000')
+      .single()
+
+    if (existente) {
+      setToastWarn('Ya existe una jornada para este cliente en esta fecha. ¿Querés guardar de todas formas?')
+      return
+    }
+
+    await ejecutarGuardar()
+  }
+
+  const ejecutarGuardar = async () => {
+    setToastWarn('')
     const payload = {
       fecha: form.fecha,
       cliente_id: form.cliente_id,
@@ -71,7 +93,7 @@ export default function FormularioJornada() {
       ({ error } = await supabase.from('jornadas').insert(payload))
     }
 
-    if (error) { showToast('Error al guardar. Intentá de nuevo.', true); return }
+    if (error) { showToast('Error al guardar.'); return }
     showToast(editId ? 'Jornada actualizada.' : 'Jornada guardada.')
     limpiar()
     cargarJornadas()
@@ -100,10 +122,7 @@ export default function FormularioJornada() {
     setErrors({})
   }
 
-  const showToast = (msg) => {
-    setToast(msg)
-    setTimeout(() => setToast(''), 3000)
-  }
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
   const minHa = form.minutos_volados && form.hectareas
     ? (Number(form.minutos_volados) / Number(form.hectareas)).toFixed(2)
@@ -116,8 +135,9 @@ export default function FormularioJornada() {
   const inp = (key, extra = {}) => ({
     value: form[key],
     onChange: e => set(key, e.target.value),
-    className: `w-full h-10 px-3 border rounded-lg text-sm outline-none transition-all
-      ${errors[key] ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 focus:border-[#0D6CB0] focus:ring-2 focus:ring-[#0D6CB0]/10'}`,
+    className: `w-full h-10 px-3 border rounded-lg text-sm outline-none transition-all ${errors[key] ? 'border-red-400' : 'border-gray-200'}`,
+    onFocus: e => { if (!errors[key]) e.target.style.borderColor = '#0D6CB0' },
+    onBlur: e => { if (!errors[key]) e.target.style.borderColor = '#e5e7eb' },
     ...extra
   })
 
@@ -126,19 +146,18 @@ export default function FormularioJornada() {
       <div className="max-w-2xl mx-auto pb-16">
         <h1 className="text-2xl font-medium text-gray-900 mb-1">Registrar jornada</h1>
         <p className="text-sm text-gray-400 mb-6">
-          Campos con <span className="text-[#0D6CB0]">*</span> son obligatorios.
+          Campos con <span style={{ color: '#0D6CB0' }}>*</span> son obligatorios.
         </p>
 
-        {/* Identificación */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Identificación</div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-500 mb-1.5">Fecha <span className="text-[#0D6CB0]">*</span></label>
+              <label className="block text-sm text-gray-500 mb-1.5">Fecha <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="date" {...inp('fecha')} />
             </div>
             <div>
-              <label className="block text-sm text-gray-500 mb-1.5">Cliente <span className="text-[#0D6CB0]">*</span></label>
+              <label className="block text-sm text-gray-500 mb-1.5">Cliente <span style={{ color: '#0D6CB0' }}>*</span></label>
               <select {...inp('cliente_id')}>
                 <option value="">— Seleccionar —</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
@@ -147,12 +166,11 @@ export default function FormularioJornada() {
           </div>
         </div>
 
-        {/* Vuelo */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Datos de vuelo</div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-gray-500 mb-1.5">Vuelos <span className="text-[#0D6CB0]">*</span></label>
+              <label className="block text-sm text-gray-500 mb-1.5">Vuelos <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="number" min="1" placeholder="0" {...inp('cantidad_vuelos')} />
             </div>
             <div>
@@ -166,12 +184,11 @@ export default function FormularioJornada() {
           </div>
         </div>
 
-        {/* Insumo */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Insumo aplicado</div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-gray-500 mb-1.5">KG esparcidos <span className="text-[#0D6CB0]">*</span></label>
+              <label className="block text-sm text-gray-500 mb-1.5">KG esparcidos <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="number" step="0.01" placeholder="0.00" {...inp('kg_esparcidos')} />
             </div>
             <div>
@@ -179,7 +196,7 @@ export default function FormularioJornada() {
               <input type="number" step="0.01" placeholder="0.00" {...inp('sacos_aplicados')} />
             </div>
             <div>
-              <label className="block text-sm text-gray-500 mb-1.5">Hectáreas <span className="text-[#0D6CB0]">*</span></label>
+              <label className="block text-sm text-gray-500 mb-1.5">Hectáreas <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="number" step="0.01" placeholder="0.00" {...inp('hectareas')} />
             </div>
           </div>
@@ -197,27 +214,53 @@ export default function FormularioJornada() {
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 justify-end mb-3">
           <button onClick={limpiar} className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition-colors">
             Limpiar
           </button>
-          <button onClick={guardar} className="h-9 px-5 bg-[#0D6CB0] hover:bg-[#064979] text-white text-sm font-medium rounded-lg transition-colors">
+          <button
+            onClick={guardar}
+            className="h-9 px-5 text-white text-sm font-medium rounded-lg transition-colors"
+            style={{ background: '#0D6CB0' }}
+            onMouseEnter={e => e.target.style.background = '#064979'}
+            onMouseLeave={e => e.target.style.background = '#0D6CB0'}
+          >
             {editId ? 'Actualizar jornada' : 'Guardar jornada'}
           </button>
         </div>
 
         {toast && (
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-800 mb-4">
+          <div className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm mb-3"
+            style={{ background: '#dbeafe', border: '1px solid #bfdbfe', color: '#1e40af' }}>
             ✓ {toast}
           </div>
         )}
 
-        {/* Lista del mes */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-6">
+        {toastWarn && (
+          <div className="rounded-lg px-4 py-3 text-sm mb-3"
+            style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
+            <div className="font-medium mb-2">⚠ {toastWarn}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={ejecutarGuardar}
+                className="h-7 px-3 text-white text-xs rounded-lg"
+                style={{ background: '#0D6CB0' }}>
+                Sí, guardar igual
+              </button>
+              <button
+                onClick={() => setToastWarn('')}
+                className="h-7 px-3 text-xs rounded-lg border border-gray-300 bg-white">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4">
           <div className="flex items-center justify-between mb-4">
             <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Jornadas del mes</div>
-            <span className="text-[11px] font-medium px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+              style={{ background: '#dbeafe', color: '#1e40af' }}>
               {jornadas.length} registradas
             </span>
           </div>
@@ -243,8 +286,8 @@ export default function FormularioJornada() {
                       <td className="py-2.5 px-2 text-right text-xs">{Number(j.kg_esparcidos).toFixed(1)}</td>
                       <td className="py-2.5 px-2 text-right text-xs">{Number(j.hectareas).toFixed(2)}</td>
                       <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                        <button onClick={() => editar(j)} className="text-xs text-[#0D6CB0] hover:bg-blue-50 px-2 py-1 rounded transition-colors">Editar</button>
-                        <button onClick={() => eliminar(j.id)} className="text-xs text-gray-300 hover:text-red-400 hover:bg-red-50 px-2 py-1 rounded transition-colors ml-1">×</button>
+                        <button onClick={() => editar(j)} className="text-xs px-2 py-1 rounded transition-colors" style={{ color: '#0D6CB0' }}>Editar</button>
+                        <button onClick={() => eliminar(j.id)} className="text-xs text-gray-300 hover:text-red-400 px-2 py-1 rounded transition-colors ml-1">×</button>
                       </td>
                     </tr>
                   ))}
