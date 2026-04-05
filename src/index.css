@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1a1a1a; }
+input, select, button { font-family: inherit; }
+
+:root {
+  --cd-blue: #0D6CB0;
+  --cd-blue-dark: #064979;
+  --cd-blue-light: #1591EA;
+  --cd-blue-pale: #C6DBFE;
+}
