@@ -361,16 +361,23 @@ export default function Dashboard() {
                 </table>
               </div>
 
-              <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Acciones</div>
-                <div className="flex flex-col gap-2 flex-1">
-                  <button
-onClick={() => navigate(`/reporte/${periodo.anio}/${periodo.mes}`)}
-  className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-  Ver reporte completo →
-</button>
-                  <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">Exportar PDF por cliente →</button>
-                </div>
+             <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col">
+  <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Acciones</div>
+  <div className="flex flex-col gap-2 flex-1">
+    <button
+      onClick={() => navigate(`/reporte/${periodo.anio}/${periodo.mes}`)}
+      className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+      Ver reporte completo →
+    </button>
+    <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+      Exportar PDF por cliente →
+    </button>
+    <button
+      onClick={() => navigate('/costos-fijos')}
+      className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+      Configurar costos fijos →
+    </button>
+  </div>
                 {!resumen.cerrado && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <button

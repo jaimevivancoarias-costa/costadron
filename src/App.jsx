@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import FormularioJornada from './pages/FormularioJornada'
 import Dashboard from './pages/Dashboard'
 import Reporte from './pages/Reporte'
+import CostosFijos from './pages/CostosFijos'
 
 function ProtectedRoute({ children, rol }) {
   const { session, usuario } = useAuth()
@@ -40,6 +41,9 @@ export default function App() {
           <Route path="/reporte/:anio/:mes" element={
             <ProtectedRoute rol="jefe"><Reporte /></ProtectedRoute>
           } />
+        <Route path="/costos-fijos" element={
+           <ProtectedRoute rol="jefe"><CostosFijos /></ProtectedRoute>
+         } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
