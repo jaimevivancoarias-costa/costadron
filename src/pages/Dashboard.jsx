@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [modalCerrar, setModalCerrar] = useState(false)
   const [toast, setToast] = useState('')
   const [cargando, setCargando] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const cargarMeses = async () => {
@@ -362,7 +364,11 @@ export default function Dashboard() {
               <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col">
                 <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Acciones</div>
                 <div className="flex flex-col gap-2 flex-1">
-                  <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">Ver reporte completo →</button>
+                  <button
+onClick={() => navigate(`/reporte/${periodo.anio}/${periodo.mes}`)}
+  className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+  Ver reporte completo →
+</button>
                   <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">Exportar PDF por cliente →</button>
                 </div>
                 {!resumen.cerrado && (

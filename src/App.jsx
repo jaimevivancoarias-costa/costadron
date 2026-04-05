@@ -3,11 +3,14 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import FormularioJornada from './pages/FormularioJornada'
 import Dashboard from './pages/Dashboard'
+import Reporte from './pages/Reporte'
 
 function ProtectedRoute({ children, rol }) {
   const { session, usuario } = useAuth()
-  if (session === undefined) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Cargando...</div>
+  if (session === undefined || usuario === undefined)
+    return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Cargando...</div>
   if (!session) return <Navigate to="/login" replace />
+  if (!usuario) return <Navigate to="/login" replace />
   if (rol && usuario && usuario.rol !== rol) return <Navigate to="/" replace />
   return children
 }
@@ -33,6 +36,9 @@ export default function App() {
           } />
           <Route path="/dashboard" element={
             <ProtectedRoute rol="jefe"><Dashboard /></ProtectedRoute>
+          } />
+          <Route path="/reporte/:anio/:mes" element={
+            <ProtectedRoute rol="jefe"><Reporte /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
