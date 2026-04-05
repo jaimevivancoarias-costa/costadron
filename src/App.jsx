@@ -5,6 +5,7 @@ import FormularioJornada from './pages/FormularioJornada'
 import Dashboard from './pages/Dashboard'
 import Reporte from './pages/Reporte'
 import CostosFijos from './pages/CostosFijos'
+import YTD from './pages/YTD'
 
 function ProtectedRoute({ children, rol }) {
   const { session, usuario } = useAuth()
@@ -43,6 +44,9 @@ export default function App() {
           } />
         <Route path="/costos-fijos" element={
            <ProtectedRoute rol="jefe"><CostosFijos /></ProtectedRoute>
+         } />
+       <Route path="/ytd" element={
+         <ProtectedRoute rol="jefe"><YTD /></ProtectedRoute>
          } />
         </Routes>
       </BrowserRouter>

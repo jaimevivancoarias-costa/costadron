@@ -377,6 +377,11 @@ export default function Dashboard() {
       className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
       Configurar costos fijos →
     </button>
+<button
+  onClick={() => navigate('/ytd')}
+  className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+  Ver resumen anual →
+</button>
   </div>
                 {!resumen.cerrado && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
