@@ -172,6 +172,9 @@ export default function Dashboard() {
   const puedeIrAtras = idx !== null && idx > 0
   const puedeIrAdelante = idx !== null && idx < mesesDisponibles.length - 1
 
+  const mesYaTermino = periodo ? new Date() > new Date(periodo.anio, periodo.mes, 0) : false
+  const diasDesdeFinMes = periodo ? Math.floor((new Date() - new Date(periodo.anio, periodo.mes, 0)) / (1000 * 60 * 60 * 24)) : 0
+
   return (
     <Layout>
       <div className="max-w-3xl mx-auto pb-16">
@@ -195,17 +198,36 @@ export default function Dashboard() {
               disabled={!puedeIrAtras}
               className="h-8 px-3 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              ← {puedeIrAtras ? MESES[mesesDisponibles[idx - 1].mes] : ''}
+              {puedeIrAtras ? `← ${MESES[mesesDisponibles[idx - 1].mes]}` : '←'}
             </button>
             <button
               onClick={() => setIdx(i => i + 1)}
               disabled={!puedeIrAdelante}
               className="h-8 px-3 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              {puedeIrAdelante ? MESES[mesesDisponibles[idx + 1].mes] : ''} →
+              {puedeIrAdelante ? `${MESES[mesesDisponibles[idx + 1].mes]} →` : '→'}
             </button>
           </div>
         </div>
+
+        {mesYaTermino && !resumen?.cerrado && !cargando && !resumen?.sinDatos && (
+          <div className="flex flex-col gap-2 mb-5">
+            {!varGuardados && mesYaTermino && (
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
+                style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
+                <span>⚠</span>
+                <span>Los costos variables de {mesLabel} no están cargados. El reporte no puede cerrarse hasta completarlos.</span>
+              </div>
+            )}
+            {diasDesdeFinMes > 5 && (
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
+                style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
+                <span>⚠</span>
+                <span>{mesLabel} lleva {diasDesdeFinMes} días sin cerrar. Recordá cerrar el mes para congelar los datos.</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {cargando && (
           <div className="text-center py-16 text-sm text-gray-400">Cargando datos...</div>
@@ -218,29 +240,6 @@ export default function Dashboard() {
             <div className="text-xs text-gray-400">Los pilotos aún no han registrado vuelos este mes.</div>
           </div>
         )}
-{!cargando && resumen && !resumen.sinDatos && !resumen.cerrado && (
-  <div className="flex flex-col gap-2 mb-5">
-    {!varGuardados && (
-      <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
-        style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
-        <span>⚠</span>
-        <span className="flex-1">Los costos variables de {mesLabel} no están cargados. El reporte no puede cerrarse hasta completarlos.</span>
-      </div>
-    )}
-    {(() => {
-      const hoy = new Date()
-      const ultimoDiaMes = new Date(periodo.anio, periodo.mes, 0)
-      const diasDesdeFinMes = Math.floor((hoy - ultimoDiaMes) / (1000 * 60 * 60 * 24))
-      return diasDesdeFinMes > 5 ? (
-        <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
-          style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
-          <span>⚠</span>
-          <span className="flex-1">{mesLabel} lleva {diasDesdeFinMes} días sin cerrar. Recordá cerrar el mes para congelar los datos.</span>
-        </div>
-      ) : null
-    })()}
-  </div>
-)}
 
         {!cargando && resumen && !resumen.sinDatos && (
           <>
@@ -274,7 +273,7 @@ export default function Dashboard() {
                     {varGuardados && !varEditando ? 'Cargados' : varEditando ? 'Editando' : 'Pendiente'}
                   </span>
                 </div>
-                {!varGuardados && (
+                {!varGuardados && mesYaTermino && (
                   <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm mb-4"
                     style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
                     ⚠ Ingresá los costos variables antes de cerrar el mes.
@@ -284,7 +283,7 @@ export default function Dashboard() {
                   {[
                     { key: 'gasolina_aceite', label: 'Gasolina y aceite', hint: 'combustible del mes' },
                     { key: 'muellaje_costatech', label: 'Muellaje / CostaTech', hint: 'gastos de bote y muellaje' },
-                    { key: 'comision_piloto', label: 'Comisión piloto', hint: '$0 si no aplica' },
+                    { key: 'comision_piloto', label: 'Comision piloto', hint: '$0 si no aplica' },
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-sm text-gray-500 mb-1.5">{f.label}</label>
@@ -335,7 +334,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div><div className="text-gray-400 mb-1">Gasolina y aceite</div><div className="font-medium">{fmt$(costosMes.gasolina_aceite)}</div></div>
                   <div><div className="text-gray-400 mb-1">Muellaje / CostaTech</div><div className="font-medium">{fmt$(costosMes.muellaje_costatech)}</div></div>
-                  <div><div className="text-gray-400 mb-1">Comisión piloto</div><div className="font-medium">{fmt$(costosMes.comision_piloto)}</div></div>
+                  <div><div className="text-gray-400 mb-1">Comision piloto</div><div className="font-medium">{fmt$(costosMes.comision_piloto)}</div></div>
                 </div>
               </div>
             )}
@@ -384,28 +383,28 @@ export default function Dashboard() {
                 </table>
               </div>
 
-             <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col">
-  <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Acciones</div>
-  <div className="flex flex-col gap-2 flex-1">
-    <button
-      onClick={() => navigate(`/reporte/${periodo.anio}/${periodo.mes}`)}
-      className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-      Ver reporte completo →
-    </button>
-    <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-      Exportar PDF por cliente →
-    </button>
-    <button
-      onClick={() => navigate('/costos-fijos')}
-      className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-      Configurar costos fijos →
-    </button>
-<button
-  onClick={() => navigate('/ytd')}
-  className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-  Ver resumen anual →
-</button>
-  </div>
+              <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Acciones</div>
+                <div className="flex flex-col gap-2 flex-1">
+                  <button
+                    onClick={() => navigate(`/reporte/${periodo.anio}/${periodo.mes}`)}
+                    className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+                    Ver reporte completo →
+                  </button>
+                  <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+                    Exportar PDF por cliente →
+                  </button>
+                  <button
+                    onClick={() => navigate('/costos-fijos')}
+                    className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+                    Configurar costos fijos →
+                  </button>
+                  <button
+                    onClick={() => navigate('/ytd')}
+                    className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+                    Ver resumen anual →
+                  </button>
+                </div>
                 {!resumen.cerrado && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <button
@@ -419,7 +418,7 @@ export default function Dashboard() {
                       Cerrar mes
                     </button>
                     <div className="text-xs text-gray-400 mt-1.5 text-center">
-                      {!varGuardados ? 'Cargá los costos variables primero' : 'El mes está listo para cerrar'}
+                      {!varGuardados ? 'Carga los costos variables primero' : 'El mes esta listo para cerrar'}
                     </div>
                   </div>
                 )}
@@ -431,18 +430,18 @@ export default function Dashboard() {
         {modalCerrar && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl border border-gray-100 p-6 max-w-sm w-full">
-              <h2 className="text-base font-medium text-gray-900 mb-2">¿Cerrar {mesLabel}?</h2>
+              <h2 className="text-base font-medium text-gray-900 mb-2">Cerrar {mesLabel}?</h2>
               <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                Esta acción congela todos los datos del mes. No podrás modificar jornadas ni costos una vez cerrado.
+                Esta accion congela todos los datos del mes. No podras modificar jornadas ni costos una vez cerrado.
               </p>
               <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm space-y-1">
                 <div className="flex justify-between"><span className="text-gray-500">Costos variables</span><span className="font-medium">{fmt$(totalVars)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Total a facturar</span><span className="font-medium">{resumen ? fmt$(resumen.totalCosto) : '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Total a facturar</span><span className="font-medium">{resumen ? fmt$(resumen.totalCosto) : '-'}</span></div>
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setModalCerrar(false)} className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition-colors">Cancelar</button>
                 <button onClick={cerrarMes} className="h-9 px-4 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors">
-                  Sí, cerrar {periodo ? MESES[periodo.mes] : ''}
+                  Si, cerrar {periodo ? MESES[periodo.mes] : ''}
                 </button>
               </div>
             </div>
