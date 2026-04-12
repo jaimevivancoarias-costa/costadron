@@ -144,7 +144,7 @@ export default function YTD() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-2.5 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
           {[
             { label: 'Costo YTD', value: fmt$(totalCosto), sub: 'acumulado 2026' },
             { label: 'Vuelos YTD', value: totalVuelos, sub: 'total del año' },
@@ -166,7 +166,7 @@ export default function YTD() {
         </div>
 
         {/* Vuelos y Ha */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="bg-white border border-gray-100 rounded-xl p-5">
             <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Vuelos por mes</div>
             <BarChart data={datos} valueKey="vuelos" color="#1591EA" />

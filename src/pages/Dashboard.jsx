@@ -243,7 +243,7 @@ export default function Dashboard() {
 
         {!cargando && resumen && !resumen.sinDatos && (
           <>
-            <div className="grid grid-cols-4 gap-2.5 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
               {[
                 { label: 'Costo operacional', value: fmt$(resumen.totalCosto), sub: `${resumen.clientes} clientes` },
                 { label: 'Vuelos realizados', value: resumen.totalVuelos, sub: `${resumen.jornadas} jornadas` },
@@ -279,7 +279,7 @@ export default function Dashboard() {
                     ⚠ Ingresá los costos variables antes de cerrar el mes.
                   </div>
                 )}
-                <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   {[
                     { key: 'gasolina_aceite', label: 'Gasolina y aceite', hint: 'combustible del mes' },
                     { key: 'muellaje_costatech', label: 'Muellaje / CostaTech', hint: 'gastos de bote y muellaje' },
@@ -346,7 +346,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white border border-gray-100 rounded-xl p-5">
                 <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Valor a facturar por cliente</div>
                 <table className="w-full text-sm">

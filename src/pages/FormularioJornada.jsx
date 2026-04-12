@@ -151,7 +151,7 @@ export default function FormularioJornada() {
 
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Identificación</div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-500 mb-1.5">Fecha <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="date" {...inp('fecha')} />
@@ -168,7 +168,7 @@ export default function FormularioJornada() {
 
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Datos de vuelo</div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm text-gray-500 mb-1.5">Vuelos <span style={{ color: '#0D6CB0' }}>*</span></label>
               <input type="number" min="1" placeholder="0" {...inp('cantidad_vuelos')} />
