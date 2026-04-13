@@ -358,7 +358,7 @@ export default function Reporte() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-2.5 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
           {[
             { label: 'Costo total', value: fmt$(data.totalCosto), sub: `${data.clientes.length} clientes` },
             { label: 'Vuelos', value: data.totalVuelos, sub: `${data.jornadas.length} jornadas` },
@@ -376,7 +376,7 @@ export default function Reporte() {
         {/* Clientes */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Desglose por cliente</div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:'600px'}}>
             <thead>
               <tr className="border-b border-gray-100">
                 {['Cliente','Jornadas','Vuelos','Ha','KG','Costo/ha','A facturar','%',''].map(h => (
@@ -426,7 +426,7 @@ export default function Reporte() {
         </div>
 
         {/* Composición costos */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white border border-gray-100 rounded-xl p-5">
             <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Costos fijos</div>
             {data.costosFijosDetalle.map(c => (
