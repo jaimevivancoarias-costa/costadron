@@ -13,7 +13,7 @@ export default function Layout({ children }) {
                 href="https://costamarket-hub.vercel.app"
                 style={{ color: '#7BB6FD', fontSize: '11px' }}
               >
-                &larr; Hub
+              Hub
               </a>
               <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
               <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#7BB6FD' }}>
