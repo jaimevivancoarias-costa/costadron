@@ -306,6 +306,32 @@ export default function FormularioJornada() {
           )}
         </div>
       </div>
+
+      {jornadas.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">
+            Tu resumen del mes
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              { label: 'Vuelos', value: totVuelos },
+              { label: 'Hectáreas', value: totHa.toFixed(1) },
+              { label: 'KG esparcidos', value: totKg.toFixed(0) },
+              { label: 'Sacos', value: jornadas.reduce((s,j) => s + Number(j.sacos_aplicados||0), 0).toFixed(1) },
+              { label: 'Jornadas', value: jornadas.length },
+              { label: 'Clientes', value: new Set(jornadas.map(j => j.cliente_id)).size },
+            ].map(k => (
+              <div key={k.label} className="bg-gray-50 rounded-xl p-3">
+                <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{k.label}</div>
+                <div className="text-lg font-medium text-gray-900">{k.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+
+
     </Layout>
   )
 }

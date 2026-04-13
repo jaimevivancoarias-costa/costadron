@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [modalCerrar, setModalCerrar] = useState(false)
   const [toast, setToast] = useState('')
   const [cargando, setCargando] = useState(true)
+  const [pilotos, setPilotos] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -75,11 +76,28 @@ export default function Dashboard() {
     const desde = primerDia(anio, mes)
     const hasta = ultimoDia(anio, mes)
 
-    const [{ data: jornadas }, { data: fijos }, { data: varMes }] = await Promise.all([
+    const [{ data: jornadas }, { data: fijos }, { data: varMes }, { data: usuarios }] = await Promise.all([
       supabase.from('jornadas').select('*, clientes(nombre)').gte('fecha', desde).lte('fecha', hasta),
       supabase.from('costos_fijos').select('*').eq('anio', anio).single(),
-      supabase.from('costos_variables_mes').select('*').eq('anio', anio).eq('mes', mes).single()
+      supabase.from('costos_variables_mes').select('*').eq('anio', anio).eq('mes', mes).single(),
+      supabase.from('usuarios').select('*').eq('rol', 'piloto').eq('activo', true)
     ])
+
+    if (usuarios) {
+      const pilotosData = (usuarios || []).map(u => {
+        const jornadasPiloto = (jornadas || []).filter(j => j.piloto_id === u.id)
+        return {
+          nombre: u.nombre,
+          vuelos: jornadasPiloto.reduce((s,j) => s + j.cantidad_vuelos, 0),
+          jornadas: jornadasPiloto.length,
+          ha: jornadasPiloto.reduce((s,j) => s + Number(j.hectareas||0), 0),
+          kg: jornadasPiloto.reduce((s,j) => s + Number(j.kg_esparcidos||0), 0),
+          sacos: jornadasPiloto.reduce((s,j) => s + Number(j.sacos_aplicados||0), 0),
+          clientes: new Set(jornadasPiloto.map(j => j.cliente_id)).size
+        }
+      }).filter(p => p.jornadas > 0)
+      setPilotos(pilotosData)
+    }
 
     setCostosMes(varMes)
     if (varMes) {
@@ -482,6 +500,37 @@ export default function Dashboard() {
               </div>
             </div>
           </>
+        )}
+
+        {pilotos.length > 0 && (
+          <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4 mb-4">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Estado de pilotos — {mesLabel}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {pilotos.map(p => (
+                <div key={p.nombre} className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
+                    <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Vuelos', value: p.vuelos },
+                      { label: 'Jornadas', value: p.jornadas },
+                      { label: 'Clientes', value: p.clientes },
+                      { label: 'Ha', value: p.ha.toFixed(0) },
+                      { label: 'KG', value: p.kg.toFixed(0) },
+                      { label: 'Sacos', value: p.sacos.toFixed(1) },
+                    ].map(k => (
+                      <div key={k.label}>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
+                        <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {modalCerrar && (
