@@ -12,14 +12,23 @@ export function AuthProvider({ children }) {
     const hubToken = params.get('hub_token')
 
     if (hubToken) {
-      supabase.auth.setSession({ access_token: hubToken, refresh_token: hubToken })
-        .then(({ data }) => {
-          setSession(data.session)
-          if (!data.session) setUsuario(null)
-          window.history.replaceState({}, '', window.location.pathname)
-        })
-      return
-    }
+  supabase.auth.setSession({ access_token: hubToken, refresh_token: hubToken })
+    .then(({ data }) => {
+      if (data.session) {
+        setSession(data.session)
+        window.history.replaceState({}, '', window.location.pathname)
+      } else {
+        setUsuario(null)
+      }
+    })
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+    setSession(s)
+    if (!s) setUsuario(null)
+  })
+
+  return () => subscription.unsubscribe()
+}
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
