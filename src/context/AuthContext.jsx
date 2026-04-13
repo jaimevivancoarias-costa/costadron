@@ -9,10 +9,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const hubToken = params.get('hub_token')
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
 
-    if (hubToken) {
-  supabase.auth.setSession({ access_token: hubToken, refresh_token: hubToken })
+if (accessToken && refreshToken) {
+  supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
     .then(({ data }) => {
       if (data.session) {
         setSession(data.session)
