@@ -8,9 +8,18 @@ export default function Layout({ children }) {
       <div style={{ background: '#022847' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#7BB6FD' }}>
-              COSTADRON
-            </span>
+            <div className="flex items-center gap-3">
+              
+                href="https://costamarket-hub.vercel.app"
+                style={{ color: '#7BB6FD', fontSize: '11px' }}
+              >
+                ← Hub
+              </a>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+              <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#7BB6FD' }}>
+                COSTADRON
+              </span>
+            </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium`}
