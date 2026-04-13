@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [clientes, setClientes] = useState([])
   const [costosMes, setCostosMes] = useState(null)
   const [varForm, setVarForm] = useState({ gasolina_aceite: '', muellaje_costatech: '', comision_piloto: '' })
+  const [muellajeItems, setMuellajeItems] = useState([{ descripcion: '', monto: '' }])
   const [varGuardados, setVarGuardados] = useState(false)
   const [varEditando, setVarEditando] = useState(false)
   const [modalCerrar, setModalCerrar] = useState(false)
@@ -69,6 +70,7 @@ export default function Dashboard() {
     setVarGuardados(false)
     setVarEditando(false)
     setVarForm({ gasolina_aceite: '', muellaje_costatech: '', comision_piloto: '' })
+    setMuellajeItems([{ descripcion: '', monto: '' }])
 
     const desde = primerDia(anio, mes)
     const hasta = ultimoDia(anio, mes)
@@ -86,6 +88,11 @@ export default function Dashboard() {
         muellaje_costatech: varMes.muellaje_costatech,
         comision_piloto: varMes.comision_piloto
       })
+      if (varMes.muellaje_items && varMes.muellaje_items.length > 0) {
+        setMuellajeItems(varMes.muellaje_items)
+      } else {
+        setMuellajeItems([{ descripcion: '', monto: '' }])
+      }
       setVarGuardados(true)
     }
     if (fijos) calcularResumen(jornadas || [], fijos, varMes)
@@ -140,10 +147,12 @@ export default function Dashboard() {
 
   const guardarVars = async () => {
     const { anio, mes } = periodo
+    const totalMuellaje = muellajeItems.reduce((s, i) => s + (Number(i.monto) || 0), 0)
     const payload = {
       anio, mes,
       gasolina_aceite: Number(varForm.gasolina_aceite) || 0,
-      muellaje_costatech: Number(varForm.muellaje_costatech) || 0,
+      muellaje_costatech: totalMuellaje,
+      muellaje_items: muellajeItems.filter(i => i.descripcion || i.monto),
       comision_piloto: Number(varForm.comision_piloto) || 0,
     }
     const { error } = await supabase.from('costos_variables_mes').upsert(payload, { onConflict: 'anio,mes' })
@@ -279,30 +288,78 @@ export default function Dashboard() {
                     ⚠ Ingresá los costos variables antes de cerrar el mes.
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                  {[
-                    { key: 'gasolina_aceite', label: 'Gasolina y aceite', hint: 'combustible del mes' },
-                    { key: 'muellaje_costatech', label: 'Muellaje / CostaTech', hint: 'gastos de bote y muellaje' },
-                    { key: 'comision_piloto', label: 'Comision piloto', hint: '$0 si no aplica' },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-sm text-gray-500 mb-1.5">{f.label}</label>
-                      <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm text-gray-500 mb-1.5">Gasolina y aceite</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                      <input type="number" step="0.01" placeholder="0.00"
+                        value={varForm.gasolina_aceite}
+                        onChange={e => setVarForm(v => ({ ...v, gasolina_aceite: e.target.value }))}
+                        readOnly={varGuardados && !varEditando}
+                        className="w-full h-10 pl-7 pr-3 border border-gray-200 rounded-lg text-sm outline-none transition-all"
+                        style={varGuardados && !varEditando ? { borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' } : {}}
+                        onFocus={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#0D6CB0' }}
+                        onBlur={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#e5e7eb' }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">combustible del mes</div>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-500 mb-1.5">Comision piloto</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                      <input type="number" step="0.01" placeholder="0.00"
+                        value={varForm.comision_piloto}
+                        onChange={e => setVarForm(v => ({ ...v, comision_piloto: e.target.value }))}
+                        readOnly={varGuardados && !varEditando}
+                        className="w-full h-10 pl-7 pr-3 border border-gray-200 rounded-lg text-sm outline-none transition-all"
+                        style={varGuardados && !varEditando ? { borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' } : {}}
+                        onFocus={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#0D6CB0' }}
+                        onBlur={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#e5e7eb' }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">$0 si no aplica</div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm text-gray-500">Muellaje / CostaTech</label>
+                    {(!varGuardados || varEditando) && (
+                      <button onClick={() => setMuellajeItems(items => [...items, { descripcion: '', monto: '' }])}
+                        className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                        + Agregar item
+                      </button>
+                    )}
+                  </div>
+                  {muellajeItems.map((item, i) => (
+                    <div key={i} className="flex gap-2 mb-2">
+                      <input type="text" placeholder="Descripcion (ej: arreglo bote)"
+                        value={item.descripcion}
+                        onChange={e => { const ni = [...muellajeItems]; ni[i] = {...ni[i], descripcion: e.target.value}; setMuellajeItems(ni) }}
+                        readOnly={varGuardados && !varEditando}
+                        className="flex-1 h-10 px-3 border border-gray-200 rounded-lg text-sm outline-none"
+                        style={varGuardados && !varEditando ? { borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' } : {}}
+                      />
+                      <div className="relative w-28">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                        <input
-                          type="number" step="0.01" placeholder="0.00"
-                          value={varForm[f.key]}
-                          onChange={e => setVarForm(v => ({ ...v, [f.key]: e.target.value }))}
+                        <input type="number" step="0.01" placeholder="0.00"
+                          value={item.monto}
+                          onChange={e => { const ni = [...muellajeItems]; ni[i] = {...ni[i], monto: e.target.value}; setMuellajeItems(ni) }}
                           readOnly={varGuardados && !varEditando}
-                          className="w-full h-10 pl-7 pr-3 border border-gray-200 rounded-lg text-sm outline-none transition-all"
+                          className="w-full h-10 pl-7 pr-2 border border-gray-200 rounded-lg text-sm outline-none"
                           style={varGuardados && !varEditando ? { borderColor: '#bfdbfe', background: '#eff6ff', color: '#1e40af' } : {}}
-                          onFocus={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#0D6CB0' }}
-                          onBlur={e => { if (!varGuardados || varEditando) e.target.style.borderColor = '#e5e7eb' }}
                         />
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">{f.hint}</div>
+                      {(!varGuardados || varEditando) && muellajeItems.length > 1 && (
+                        <button onClick={() => setMuellajeItems(items => items.filter((_, j) => j !== i))}
+                          className="h-10 px-2 text-gray-300 hover:text-red-400 rounded-lg">x</button>
+                      )}
                     </div>
                   ))}
+                  <div className="text-xs text-gray-400 mt-1">
+                    Total muellaje: {muellajeItems.reduce((s, i) => s + (Number(i.monto) || 0), 0).toFixed(2)}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="text-sm text-gray-500">Total: <span className="font-medium text-gray-900">{fmt$(totalVars)}</span></div>
