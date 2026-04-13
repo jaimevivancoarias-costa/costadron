@@ -23,15 +23,6 @@ export default function Layout({ children }) {
                 </div>
                 <span className="text-sm" style={{ color: '#C6DBFE' }}>{usuario?.nombre}</span>
               </div>
-              <button
-                onClick={signOut}
-                className="text-xs transition-colors"
-                style={{ color: '#7BB6FD' }}
-                onMouseEnter={e => e.target.style.color = '#C6DBFE'}
-                onMouseLeave={e => e.target.style.color = '#7BB6FD'}
-              >
-                Salir
-              </button>
             </div>
           </div>
         </div>
