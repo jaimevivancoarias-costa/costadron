@@ -8,6 +8,19 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(undefined)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const hubToken = params.get('hub_token')
+
+    if (hubToken) {
+      supabase.auth.setSession({ access_token: hubToken, refresh_token: hubToken })
+        .then(({ data }) => {
+          setSession(data.session)
+          if (!data.session) setUsuario(null)
+          window.history.replaceState({}, '', window.location.pathname)
+        })
+      return
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       if (!data.session) setUsuario(null)
