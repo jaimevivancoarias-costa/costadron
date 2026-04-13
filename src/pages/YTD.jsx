@@ -194,7 +194,7 @@ export default function YTD() {
           </div>
 
           {clienteFiltro === 'todos' ? (
-            <div className="overflow-x-auto"><table className="text-xs" style={{minWidth:'500px',width:'100%'}}>
+            <div className="overflow-x-auto"><table className="w-full text-xs" style={{minWidth:"500px"}}>
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Cliente</th>
@@ -271,7 +271,7 @@ export default function YTD() {
         {/* Tabla resumen */}
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Detalle por mes</div>
-          <div className="overflow-x-auto"><table className="text-sm" style={{minWidth:'500px',width:'100%'}}>
+          <div className="overflow-x-auto -mx-5 px-5"><table className="w-full text-sm" style={{minWidth:"500px"}}>
             <thead>
               <tr className="border-b border-gray-100">
                 {['Mes','Vuelos','Ha','KG','Costo','Costo/ha','Costo/vuelo'].map(h => (
@@ -306,6 +306,7 @@ export default function YTD() {
           </table>
         </div>
 
+      </div>
       </div>
     </Layout>
   )
