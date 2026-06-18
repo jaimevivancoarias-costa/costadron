@@ -144,12 +144,13 @@ export default function YTD() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-5">
           {[
             { label: 'Costo YTD', value: fmt$(totalCosto), sub: 'acumulado 2026' },
             { label: 'Vuelos YTD', value: totalVuelos, sub: 'total del año' },
             { label: 'Hectáreas YTD', value: totalHa.toFixed(0), sub: 'ha aplicadas' },
             { label: 'KG YTD', value: totalKg.toFixed(0), sub: 'kg esparcidos' },
+			{ label: 'Sacos YTD', value: (totalKg / 30).toFixed(0), sub: 'sacos aplicados' },
           ].map(k => (
             <div key={k.label} className="bg-gray-50 rounded-xl p-4">
               <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
@@ -274,7 +275,7 @@ export default function YTD() {
           <div className="overflow-x-auto -mx-5 px-5"><table className="w-full text-sm" style={{minWidth:"500px"}}>
             <thead>
               <tr className="border-b border-gray-100">
-                {['Mes','Vuelos','Ha','KG','Costo','Costo/ha','Costo/vuelo'].map(h => (
+                {['Mes','Vuelos','Ha','KG','Sacos','Costo','Costo/ha','Costo/vuelo'].map(h => (
                   <th key={h} className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium pr-4">{h}</th>
                 ))}
               </tr>
@@ -285,10 +286,11 @@ export default function YTD() {
                   <td className="py-2 text-xs font-medium pr-4">{MESES_FULL[d.mes]}</td>
                   <td className="py-2 text-xs pr-4">{d.vuelos}</td>
                   <td className="py-2 text-xs pr-4">{d.ha.toFixed(0)}</td>
-                  <td className="py-2 text-xs pr-4">{d.kg.toFixed(0)}</td>
+				  <td className="py-2 text-xs pr-4">{d.kg.toFixed(0)}</td>
+                  <td className="py-2 text-xs pr-4">{(d.kg / 30).toFixed(1)}</td>
                   <td className="py-2 text-xs font-medium pr-4">{fmt$(d.costo)}</td>
                   <td className="py-2 text-xs pr-4">{fmt$(d.costoHa)}</td>
-		  <td className="py-2 text-xs pr-4">{fmt$(d.vuelos > 0 ? d.costo / d.vuelos : 0)}</td>
+		          <td className="py-2 text-xs pr-4">{fmt$(d.vuelos > 0 ? d.costo / d.vuelos : 0)}</td>
                 </tr>
               ))}
             </tbody>
@@ -298,7 +300,8 @@ export default function YTD() {
                 <td className="pt-3 text-xs font-medium">{totalVuelos}</td>
                 <td className="pt-3 text-xs font-medium">{totalHa.toFixed(0)}</td>
                 <td className="pt-3 text-xs font-medium">{totalKg.toFixed(0)}</td>
-                <td className="pt-3 text-xs font-medium">{fmt$(totalCosto)}</td>
+				<td className="pt-3 text-xs font-medium">{(totalKg / 30).toFixed(1)}</td>
+				<td className="pt-3 text-xs font-medium">{fmt$(totalCosto)}</td>
                 <td className="pt-3 text-xs font-medium">{fmt$(totalHa > 0 ? totalCosto / totalHa : 0)}</td>
 <td className="pt-3 text-xs font-medium">{fmt$(totalVuelos > 0 ? totalCosto / totalVuelos : 0)}</td>
               </tr>
