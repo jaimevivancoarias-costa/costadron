@@ -379,7 +379,7 @@ export default function Reporte() {
           <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:'600px'}}>
             <thead>
               <tr className="border-b border-gray-100">
-                {['Cliente','Jornadas','Vuelos','Ha','KG','Costo/ha','A facturar','%',''].map(h => (
+                {['Cliente','Jornadas','Vuelos','Ha','KG','Sacos','Costo/ha','A facturar','%',''].map(h => (
                   <th key={h} className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium pr-3 last:pr-0">{h}</th>
                 ))}
               </tr>
@@ -392,6 +392,7 @@ export default function Reporte() {
                   <td className="py-2 text-xs pr-3">{c.vuelos}</td>
                   <td className="py-2 text-xs pr-3">{c.ha.toFixed(1)}</td>
                   <td className="py-2 text-xs pr-3">{c.kg.toFixed(0)}</td>
+                  <td className="py-2 text-xs pr-3">{(c.kg / 30).toFixed(1)}</td>
                   <td className="py-2 text-xs pr-3">{fmt$(c.costoHa)}</td>
                   <td className="py-2 text-xs font-medium pr-3">{fmt$(c.valor)}</td>
                   <td className="py-2 text-xs text-gray-400 pr-3">{c.pct.toFixed(1)}%</td>
@@ -416,6 +417,7 @@ export default function Reporte() {
                 <td className="pt-3 text-xs">{data.totalVuelos}</td>
                 <td className="pt-3 text-xs">{data.totalHa.toFixed(1)}</td>
                 <td className="pt-3 text-xs">{data.totalKg.toFixed(0)}</td>
+                <td className="pt-3 text-xs">{(data.totalKg / 30).toFixed(1)}</td>
                 <td className="pt-3 text-xs"></td>
                 <td className="pt-3 text-xs font-medium">{fmt$(data.totalCosto)}</td>
                 <td className="pt-3 text-xs">100%</td>
@@ -424,6 +426,8 @@ export default function Reporte() {
             </tfoot>
           </table>
         </div>
+
+        <div className="mb-6" />
 
         {/* Composición costos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
