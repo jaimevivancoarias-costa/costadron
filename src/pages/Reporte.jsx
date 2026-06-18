@@ -177,7 +177,8 @@ export default function Reporte() {
     doc.text(`Vuelos totales: ${c.vuelos}`, 80, 92)
     doc.text(`Hectáreas aplicadas: ${c.ha.toFixed(2)} ha`, 140, 92)
     doc.text(`KG esparcidos: ${c.kg.toFixed(2)} kg`, 20, 99)
-    doc.text(`Costo por hectárea: ${fmt$(c.costoHa)}`, 80, 99)
+    doc.text(`Sacos aplicados: ${(c.kg / 30).toFixed(1)} sacos`, 80, 99)
+    doc.text(`Costo por hectárea: ${fmt$(c.costoHa)}`, 140, 99)
 
     // Total a pagar
     doc.setFillColor(13, 108, 176)
@@ -200,15 +201,16 @@ export default function Reporte() {
 
     autoTable(doc, {
       startY: 145,
-      head: [['Fecha', 'Vuelos', 'Hectáreas', 'KG aplicados', 'Valor']],
+      head: [['Fecha', 'Vuelos', 'Hectáreas', 'KG aplicados', 'Sacos', 'Valor']],
       body: jornadasCliente.map(j => [
         j.fecha,
         j.cantidad_vuelos,
         Number(j.hectareas).toFixed(2),
         Number(j.kg_esparcidos).toFixed(2),
+        (Number(j.kg_esparcidos) / 30).toFixed(1),
         fmt$(factorVuelo * j.cantidad_vuelos)
       ]),
-      foot: [['Total', c.vuelos, c.ha.toFixed(2), c.kg.toFixed(2), fmt$(c.valor)]],
+      foot: [['Total', c.vuelos, c.ha.toFixed(2), c.kg.toFixed(2), (c.kg / 30).toFixed(1), fmt$(c.valor)]],
       headStyles: { fillColor: [6, 73, 121], textColor: 255, fontSize: 8 },
       footStyles: { fillColor: [240, 247, 255], textColor: [6, 73, 121], fontStyle: 'bold', fontSize: 8 },
       bodyStyles: { fontSize: 8 },
