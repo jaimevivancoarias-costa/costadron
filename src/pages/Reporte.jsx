@@ -257,6 +257,7 @@ export default function Reporte() {
       ['Vuelos realizados', `${data.totalVuelos}`],
       ['Hectáreas aplicadas', `${data.totalHa.toFixed(1)} ha`],
       ['KG esparcidos', `${data.totalKg.toFixed(1)} kg`],
+      ['Sacos aplicados', `${(data.totalKg / 30).toFixed(1)} sacos`],
       ['Costo por vuelo', fmt$(data.costoVuelo)],
       ['Costo por hectárea', fmt$(data.costoHa)],
       ['Jornadas', `${data.jornadas.length}`],
@@ -280,14 +281,15 @@ export default function Reporte() {
 
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 16,
-      head: [['Cliente', 'Jornadas', 'Vuelos', 'Hectáreas', 'KG', 'Costo/ha', 'A facturar', '%']],
+      head: [['Cliente', 'Jornadas', 'Vuelos', 'Hectáreas', 'KG', 'Sacos', 'Costo/ha', 'A facturar', '%']],
       body: data.clientes.map(c => [
         c.nombre, c.jornadasCount, c.vuelos,
         c.ha.toFixed(1), c.kg.toFixed(1),
+        (c.kg / 30).toFixed(1),
         fmt$(c.costoHa), fmt$(c.valor),
         c.pct.toFixed(1) + '%'
       ]),
-      foot: [['Total', data.jornadas.length, data.totalVuelos, data.totalHa.toFixed(1), data.totalKg.toFixed(1), '', fmt$(data.totalCosto), '100%']],
+      foot: [['Total', data.jornadas.length, data.totalVuelos, data.totalHa.toFixed(1), data.totalKg.toFixed(1), (data.totalKg / 30).toFixed(1), '', fmt$(data.totalCosto), '100%']],
       headStyles: { fillColor: [2, 40, 71], textColor: 255, fontSize: 7 },
       footStyles: { fillColor: [198, 219, 254], textColor: [2, 40, 71], fontStyle: 'bold', fontSize: 7 },
       bodyStyles: { fontSize: 7 },
@@ -304,7 +306,13 @@ export default function Reporte() {
     doc.setFont('helvetica', 'bold')
     doc.text(`COMPOSICIÓN DE COSTOS — ${mesLabel}`, pageW / 2, 13, { align: 'center' })
 
-    const todosCostos = [...data.costosFijosDetalle, ...data.costosVariablesDetalle]
+    const muellajeItems = data.varMes?.muellaje_items?.filter(i => i.descripcion || i.monto) || []
+    const costosVariablesConDesglose = data.costosVariablesDetalle.flatMap(c =>
+      c.nombre === 'Muellaje / CostaTech' && muellajeItems.length > 0
+        ? [c, ...muellajeItems.map(i => ({ nombre: `  · ${i.descripcion}`, monto: Number(i.monto) }))]
+        : [c]
+    )
+    const todosCostos = [...data.costosFijosDetalle, ...costosVariablesConDesglose]
     autoTable(doc, {
       startY: 28,
       head: [['Componente de costo', 'Monto ($)', '% del total']],
