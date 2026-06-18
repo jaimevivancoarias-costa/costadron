@@ -444,9 +444,17 @@ export default function Reporte() {
           <div className="bg-white border border-gray-100 rounded-xl p-5">
             <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Costos variables</div>
             {data.costosVariablesDetalle.map(c => (
-              <div key={c.nombre} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                <span className="text-xs text-gray-500">{c.nombre}</span>
-                <span className="text-xs font-medium">{fmt$(c.monto)}</span>
+              <div key={c.nombre}>
+                <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                  <span className="text-xs text-gray-500">{c.nombre}</span>
+                  <span className="text-xs font-medium">{fmt$(c.monto)}</span>
+                </div>
+                {c.nombre === 'Muellaje / CostaTech' && data.varMes?.muellaje_items?.filter(i => i.descripcion || i.monto).map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-1.5 pl-4 border-b border-gray-50 last:border-0">
+                    <span className="text-xs text-gray-400">· {item.descripcion}</span>
+                    <span className="text-xs text-gray-400">{fmt$(item.monto)}</span>
+                  </div>
+                ))}
               </div>
             ))}
             <div className="flex justify-between items-center pt-2 mt-1 border-t border-gray-200">
