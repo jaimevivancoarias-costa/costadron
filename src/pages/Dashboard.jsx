@@ -466,9 +466,6 @@ export default function Dashboard() {
                     className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
                     Ver reporte completo →
                   </button>
-                  <button className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
-                    Exportar PDF por cliente →
-                  </button>
                   <button
                     onClick={() => navigate('/costos-fijos')}
                     className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
