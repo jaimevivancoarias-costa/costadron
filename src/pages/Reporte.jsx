@@ -298,6 +298,44 @@ export default function Reporte() {
       alternateRowStyles: { fillColor: [248, 250, 252] },
       margin: { left: 15, right: 15 }
     })
+    // Zonas
+    const ZONA_CLIENTE_PDF = {
+      'REYMAR': 'Puná', 'PACIMAR': 'Puná', 'LANGUISA': 'Puná',
+      'NUTRIFEED': 'Jambelí', 'OCEANAZUL': 'Jambelí', 'AUSTROMAR': 'Jambelí',
+      'LIMONVER': 'Jambelí', 'OCEANMARKET': 'Jambelí', 'SEVILLA': 'Jambelí',
+      'MAREEXPORT': 'Jambelí', 'AGRIMARINE': 'Jambelí'
+    }
+    const zonasPDF = { 'Jambelí': { vuelos: 0, ha: 0, kg: 0, costo: 0 }, 'Puná': { vuelos: 0, ha: 0, kg: 0, costo: 0 } }
+    data.clientes.forEach(c => {
+      const zona = ZONA_CLIENTE_PDF[c.nombre.toUpperCase()]
+      if (zona) {
+        zonasPDF[zona].vuelos += c.vuelos
+        zonasPDF[zona].ha += c.ha
+        zonasPDF[zona].kg += c.kg
+        zonasPDF[zona].costo += c.valor
+      }
+    })
+    
+    doc.setTextColor(2, 40, 71)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text('DESGLOSE POR ZONA', 15, doc.lastAutoTable.finalY + 12)
+    
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 16,
+      head: [['Zona', 'Vuelos', 'Hectáreas', 'KG', 'Sacos', 'Costo', 'Costo/vuelo', 'Costo/ha']],
+      body: Object.entries(zonasPDF).map(([zona, z]) => [
+        zona, z.vuelos, z.ha.toFixed(1), z.kg.toFixed(0),
+        (z.kg / 30).toFixed(1),
+        fmt$(z.costo),
+        fmt$(z.vuelos > 0 ? z.costo / z.vuelos : 0),
+        fmt$(z.ha > 0 ? z.costo / z.ha : 0),
+      ]),
+      headStyles: { fillColor: [2, 40, 71], textColor: 255, fontSize: 7 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [240, 247, 255] },
+      margin: { left: 15, right: 15 }
+    })
 
     // Costos
     doc.addPage()
