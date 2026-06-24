@@ -520,7 +520,6 @@ export default function Reporte() {
         </div>
 
       </div>
-      </div>
     </Layout>
   )
 }
