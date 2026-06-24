@@ -119,6 +119,25 @@ export default function YTD() {
   const totalVuelos = mesesConDatos.reduce((s, d) => s + d.vuelos, 0)
   const totalHa = mesesConDatos.reduce((s, d) => s + d.ha, 0)
   const totalKg = mesesConDatos.reduce((s, d) => s + d.kg, 0)
+	const ZONA_CLIENTE_YTD = {
+	  'REYMAR': 'Puná', 'PACIMAR': 'Puná', 'LANGUISA': 'Puná',
+	  'NUTRIFEED': 'Jambelí', 'OCEANAZUL': 'Jambelí', 'AUSTROMAR': 'Jambelí',
+	  'LIMONVER': 'Jambelí', 'OCEANMARKET': 'Jambelí', 'SEVILLA': 'Jambelí',
+	  'MAREEXPORT': 'Jambelí', 'AGRIMARINE': 'Jambelí'
+	}
+	const zonasYTD = { 'Jambelí': { costo: 0, vuelos: 0, ha: 0, kg: 0 }, 'Puná': { costo: 0, vuelos: 0, ha: 0, kg: 0 } }
+	mesesConDatos.forEach(d => {
+	  Object.entries(d.porCliente || {}).forEach(([nombre, c]) => {
+	    const zona = ZONA_CLIENTE_YTD[nombre.toUpperCase()]
+	    if (zona) {
+	      zonasYTD[zona].costo += c.valor
+	      zonasYTD[zona].vuelos += c.vuelos
+	      zonasYTD[zona].ha += c.ha
+	      zonasYTD[zona].kg += c.kg || 0
+	    }
+	  })
+	})
+
 
   // Tabla de facturación por cliente
   const tablaClientes = clientesUnicos.map(c => {
@@ -144,21 +163,49 @@ export default function YTD() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-5">
-          {[
-            { label: 'Costo YTD', value: fmt$(totalCosto), sub: 'acumulado 2026' },
-            { label: 'Vuelos YTD', value: totalVuelos, sub: 'total del año' },
-            { label: 'Hectáreas YTD', value: totalHa.toFixed(0), sub: 'ha aplicadas' },
-            { label: 'KG YTD', value: totalKg.toFixed(0), sub: 'kg esparcidos' },
-			{ label: 'Sacos YTD', value: (totalKg / 30).toFixed(0), sub: 'sacos aplicados' },
-          ].map(k => (
-            <div key={k.label} className="bg-gray-50 rounded-xl p-4">
-              <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
-              <div className="text-xl font-medium text-gray-900">{k.value}</div>
-              <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
-            </div>
-          ))}
-        </div>
+        {/* General */}
+		<div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">General</div>
+		<div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
+		  {[
+		    { label: 'Costo YTD', value: fmt$(totalCosto), sub: 'acumulado 2026' },
+		    { label: 'Vuelos YTD', value: totalVuelos, sub: 'total del año' },
+		    { label: 'Hectáreas YTD', value: totalHa.toFixed(0), sub: 'ha aplicadas' },
+		    { label: 'KG YTD', value: totalKg.toFixed(0), sub: 'kg esparcidos' },
+		    { label: 'Sacos YTD', value: (totalKg / 30).toFixed(0), sub: 'sacos aplicados' },
+		  ].map(k => (
+		    <div key={k.label} className="bg-gray-50 rounded-xl p-4">
+		      <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
+		      <div className="text-xl font-medium text-gray-900">{k.value}</div>
+		      <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
+		    </div>
+		  ))}
+		</div>
+		
+		{/* Por zona */}
+		{['Jambelí', 'Puná'].map(zona => {
+		  const z = zonasYTD[zona]
+		  return (
+		    <div key={zona}>
+		      <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">{zona}</div>
+		      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
+		        {[
+		          { label: 'Costo', value: fmt$(z.costo), sub: 'acumulado' },
+		          { label: 'Vuelos', value: z.vuelos, sub: 'total' },
+		          { label: 'Hectáreas', value: z.ha.toFixed(0), sub: 'ha' },
+		          { label: 'KG', value: z.kg.toFixed(0), sub: 'kg' },
+		          { label: 'Sacos', value: (z.kg / 30).toFixed(0), sub: 'sacos' },
+		        ].map(k => (
+		          <div key={k.label} className="rounded-xl p-4" style={{ background: zona === 'Jambelí' ? '#eff6ff' : '#f0fdf4' }}>
+		            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
+		            <div className="text-xl font-medium text-gray-900">{k.value}</div>
+		            <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
+		          </div>
+		        ))}
+		      </div>
+		    </div>
+		  )
+		})}
+		<div className="mb-2" />
 
         {/* Costo por mes */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
