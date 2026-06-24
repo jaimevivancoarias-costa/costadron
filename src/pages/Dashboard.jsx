@@ -559,11 +559,6 @@ export default function Dashboard() {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
                     <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
                   </div>
-                  <div key={p.nombre} className="bg-gray-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
-                      <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
-                    </div>
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       {[
                         { label: 'Vuelos', value: p.vuelos },
