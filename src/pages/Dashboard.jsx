@@ -559,33 +559,32 @@ export default function Dashboard() {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
                     <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
                   </div>
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {[
-                        { label: 'Vuelos', value: p.vuelos },
-                        { label: 'Jornadas', value: p.jornadas },
-                        { label: 'Clientes', value: p.clientes },
-                        { label: 'Ha', value: p.ha.toFixed(0) },
-                        { label: 'KG', value: p.kg.toFixed(0) },
-                        { label: 'Sacos', value: p.sacos.toFixed(1) },
-                      ].map(k => (
-                        <div key={k.label}>
-                          <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
-                          <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {[
+                      { label: 'Vuelos', value: p.vuelos },
+                      { label: 'Jornadas', value: p.jornadas },
+                      { label: 'Clientes', value: p.clientes },
+                      { label: 'Ha', value: p.ha.toFixed(0) },
+                      { label: 'KG', value: p.kg.toFixed(0) },
+                      { label: 'Sacos', value: p.sacos.toFixed(1) },
+                    ].map(k => (
+                      <div key={k.label}>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
+                        <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {p.porCliente && p.porCliente.length > 0 && (
+                    <div className="border-t border-gray-200 pt-2 mt-1">
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Desglose por cliente</div>
+                      {p.porCliente.map(c => (
+                        <div key={c.nombre} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                          <span className="text-xs text-gray-600">{c.nombre}</span>
+                          <span className="text-xs text-gray-400">{c.vuelos} vuelos · {c.ha.toFixed(0)} ha · {c.kg.toFixed(0)} kg</span>
                         </div>
                       ))}
                     </div>
-                    {p.porCliente && p.porCliente.length > 0 && (
-                      <div className="border-t border-gray-200 pt-2 mt-1">
-                        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Desglose por cliente</div>
-                        {p.porCliente.map(c => (
-                          <div key={c.nombre} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
-                            <span className="text-xs text-gray-600">{c.nombre}</span>
-                            <span className="text-xs text-gray-400">{c.vuelos} vuelos · {c.ha.toFixed(0)} ha · {c.kg.toFixed(0)} kg</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
