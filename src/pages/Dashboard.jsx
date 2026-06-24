@@ -35,7 +35,15 @@ export default function Dashboard() {
   const [toast, setToast] = useState('')
   const [cargando, setCargando] = useState(true)
   const [pilotos, setPilotos] = useState([])
+  const [zonas, setZonas] = useState([])
   const navigate = useNavigate()
+
+  const ZONA_CLIENTE = {
+  'REYMAR': 'Puná', 'PACIMAR': 'Puná', 'LANGUISA': 'Puná',
+  'NUTRIFEED': 'Jambelí', 'OCEANAZUL': 'Jambelí', 'AUSTROMAR': 'Jambelí',
+  'LIMONVER': 'Jambelí', 'OCEANMARKET': 'Jambelí', 'SEVILLA': 'Jambelí',
+  'MAREEXPORT': 'Jambelí', 'AGRIMARINE': 'Jambelí'
+  }
 
   useEffect(() => {
     const cargarMeses = async () => {
@@ -86,6 +94,14 @@ export default function Dashboard() {
     if (usuarios) {
       const pilotosData = (usuarios || []).map(u => {
         const jornadasPiloto = (jornadas || []).filter(j => j.piloto_id === u.id)
+        const porClienteMap = {}
+        jornadasPiloto.forEach(j => {
+          const nombre = j.clientes?.nombre || 'Sin cliente'
+          if (!porClienteMap[nombre]) porClienteMap[nombre] = { nombre, vuelos: 0, ha: 0, kg: 0 }
+          porClienteMap[nombre].vuelos += j.cantidad_vuelos
+          porClienteMap[nombre].ha += Number(j.hectareas || 0)
+          porClienteMap[nombre].kg += Number(j.kg_esparcidos || 0)
+        })
         return {
           nombre: u.nombre,
           vuelos: jornadasPiloto.reduce((s,j) => s + j.cantidad_vuelos, 0),
@@ -93,7 +109,8 @@ export default function Dashboard() {
           ha: jornadasPiloto.reduce((s,j) => s + Number(j.hectareas||0), 0),
           kg: jornadasPiloto.reduce((s,j) => s + Number(j.kg_esparcidos||0), 0),
           sacos: jornadasPiloto.reduce((s,j) => s + Number(j.sacos_aplicados||0), 0),
-          clientes: new Set(jornadasPiloto.map(j => j.cliente_id)).size
+          clientes: new Set(jornadasPiloto.map(j => j.cliente_id)).size,
+          porCliente: Object.values(porClienteMap).sort((a,b) => b.vuelos - a.vuelos)
         }
       }).filter(p => p.jornadas > 0)
       setPilotos(pilotosData)
@@ -150,6 +167,22 @@ export default function Dashboard() {
       valor: factorVuelo * c.vuelos,
       costoHa: c.ha > 0 ? (factorVuelo * c.vuelos) / c.ha : 0
     })).sort((a, b) => b.valor - a.valor)
+
+    const zonaMap = { 'Jambelí': { vuelos: 0, ha: 0, kg: 0, costo: 0 }, 'Puná': { vuelos: 0, ha: 0, kg: 0, costo: 0 } }
+    jornadas.forEach(j => {
+      const nombreCliente = j.clientes?.nombre?.toUpperCase() || ''
+      const zona = ZONA_CLIENTE[nombreCliente]
+      if (zona) {
+        zonaMap[zona].vuelos += j.cantidad_vuelos
+        zonaMap[zona].ha += Number(j.hectareas || 0)
+        zonaMap[zona].kg += Number(j.kg_esparcidos || 0)
+        zonaMap[zona].costo += factorVuelo * j.cantidad_vuelos
+      }
+    })
+    setZonas([
+      { nombre: 'Jambelí', ...zonaMap['Jambelí'] },
+      { nombre: 'Puná', ...zonaMap['Puná'] },
+    ])
 
     setClientes(clientesArr)
     setResumen({
@@ -270,7 +303,7 @@ export default function Dashboard() {
 
         {!cargando && resumen && !resumen.sinDatos && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
               {[
                 { label: 'Costo operacional', value: fmt$(resumen.totalCosto), sub: `${resumen.clientes} clientes` },
                 { label: 'Vuelos realizados', value: resumen.totalVuelos, sub: `${resumen.jornadas} jornadas` },
@@ -284,6 +317,23 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+            {zonas.map(z => (
+              <div key={z.nombre} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
+                {[
+                  { label: `${z.nombre} — Costo`, value: fmt$(z.costo), sub: 'zona' },
+                  { label: `${z.nombre} — Vuelos`, value: z.vuelos, sub: 'vuelos' },
+                  { label: `${z.nombre} — Ha`, value: z.ha.toFixed(0), sub: 'ha' },
+                  { label: `${z.nombre} — Costo/vuelo`, value: fmt$(z.vuelos > 0 ? z.costo / z.vuelos : 0), sub: `${fmt$(z.ha > 0 ? z.costo / z.ha : 0)} / ha` },
+                ].map(k => (
+                  <div key={k.label} className="rounded-xl p-4" style={{ background: z.nombre === 'Jambelí' ? '#eff6ff' : '#f0fdf4' }}>
+                    <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
+                    <div className="text-xl font-medium text-gray-900">{k.value}</div>
+                    <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="mb-3" />
 
             {!resumen.cerrado && (
               <div className="bg-white rounded-xl p-5 mb-5"
@@ -509,20 +559,37 @@ export default function Dashboard() {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
                     <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: 'Vuelos', value: p.vuelos },
-                      { label: 'Jornadas', value: p.jornadas },
-                      { label: 'Clientes', value: p.clientes },
-                      { label: 'Ha', value: p.ha.toFixed(0) },
-                      { label: 'KG', value: p.kg.toFixed(0) },
-                      { label: 'Sacos', value: p.sacos.toFixed(1) },
-                    ].map(k => (
-                      <div key={k.label}>
-                        <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
-                        <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                  <div key={p.nombre} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium" style={{background:'#dbeafe',color:'#1e40af'}}>{p.nombre[0]}</div>
+                      <div className="text-sm font-medium text-gray-900">{p.nombre}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {[
+                        { label: 'Vuelos', value: p.vuelos },
+                        { label: 'Jornadas', value: p.jornadas },
+                        { label: 'Clientes', value: p.clientes },
+                        { label: 'Ha', value: p.ha.toFixed(0) },
+                        { label: 'KG', value: p.kg.toFixed(0) },
+                        { label: 'Sacos', value: p.sacos.toFixed(1) },
+                      ].map(k => (
+                        <div key={k.label}>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
+                          <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {p.porCliente && p.porCliente.length > 0 && (
+                      <div className="border-t border-gray-200 pt-2 mt-1">
+                        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Desglose por cliente</div>
+                        {p.porCliente.map(c => (
+                          <div key={c.nombre} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                            <span className="text-xs text-gray-600">{c.nombre}</span>
+                            <span className="text-xs text-gray-400">{c.vuelos} vuelos · {c.ha.toFixed(0)} ha · {c.kg.toFixed(0)} kg</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               ))}
