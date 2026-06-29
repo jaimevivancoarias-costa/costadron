@@ -18,8 +18,6 @@ const ZONA_CLIENTE = {
   'MAREEXPORT': 'Jambeli', 'AGRIMARINE': 'Jambeli'
 }
 
-const ZONA_DB = { 'Jambeli': 'Jambelí', 'Puna': 'Puná' }
-
 function fmt$(n) {
   return '$' + Number(n || 0).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -41,22 +39,10 @@ function calcCostoFijoZona(fijos, totalCargas) {
   return (fijos.sueldo_piloto || 0) + (fijos.sueldo_botero || 0) + (fijos.vacuna || 0) + seguroMes + depDron + depBat + depGen
 }
 
-// Colores corporativos
-const C = {
-  navy: [2, 40, 71],
-  blue: [13, 108, 176],
-  blueLight: [219, 234, 254],
-  jambeli: [30, 64, 175],
-  jambeliLight: [239, 246, 255],
-  puna: [22, 101, 52],
-  punaLight: [240, 253, 244],
-  gray: [100, 116, 139],
-  grayLight: [248, 250, 252],
-  white: [255, 255, 255],
-  border: [226, 232, 240],
-  text: [15, 23, 42],
-  textMuted: [100, 116, 139],
-}
+// Helper para colores en jsPDF — siempre r, g, b separados
+function fill(doc, r, g, b) { doc.setFillColor(r, g, b) }
+function stroke(doc, r, g, b) { doc.setDrawColor(r, g, b) }
+function color(doc, r, g, b) { doc.setTextColor(r, g, b) }
 
 export default function Reporte() {
   const { anio, mes } = useParams()
@@ -65,18 +51,14 @@ export default function Reporte() {
   const [cargando, setCargando] = useState(true)
   const [logoBase64, setLogoBase64] = useState(null)
 
-  useEffect(() => {
-    cargarDatos()
-    cargarLogo()
-  }, [anio, mes])
+  useEffect(() => { cargarDatos(); cargarLogo() }, [anio, mes])
 
   const cargarLogo = () => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
+      canvas.width = img.width; canvas.height = img.height
       canvas.getContext('2d').drawImage(img, 0, 0)
       setLogoBase64(canvas.toDataURL('image/png'))
     }
@@ -121,11 +103,8 @@ export default function Reporte() {
       const totalCargas = js.reduce((s, j) => s + Number(j.cargas_baterias || 0), 0)
       const fijos = fijosMap[zonaKey]
       const vars = varsMap[zonaKey]
-
       const costoFijo = calcCostoFijoZona(fijos, totalCargas)
-      const costoVar = vars
-        ? Number(vars.gasolina_aceite) + Number(vars.muellaje_costatech) + Number(vars.comision_piloto)
-        : 0
+      const costoVar = vars ? Number(vars.gasolina_aceite) + Number(vars.muellaje_costatech) + Number(vars.comision_piloto) : 0
       const totalCosto = costoFijo + costoVar
       const factorVuelo = totalVuelos > 0 ? totalCosto / totalVuelos : 0
 
@@ -169,13 +148,7 @@ export default function Reporte() {
         pct: totalCosto > 0 ? (factorVuelo * c.vuelos) / totalCosto * 100 : 0
       })).sort((a, b) => b.valor - a.valor)
 
-      return {
-        totalVuelos, totalHa, totalKg, totalCargas,
-        costoFijo, costoVar, totalCosto, factorVuelo,
-        costosFijosDetalle, costosVariablesDetalle,
-        clientes: clientesArr,
-        jornadas: js
-      }
+      return { totalVuelos, totalHa, totalKg, totalCargas, costoFijo, costoVar, totalCosto, factorVuelo, costosFijosDetalle, costosVariablesDetalle, clientes: clientesArr, jornadas: js }
     }
 
     const j = calcZona('Jambeli')
@@ -192,7 +165,6 @@ export default function Reporte() {
       costoVuelo: totalVuelos > 0 ? totalCosto / totalVuelos : 0,
       costoHa: totalHa > 0 ? totalCosto / totalHa : 0,
       todosClientes: [...j.clientes, ...p.clientes].sort((a, b) => b.valor - a.valor),
-      fijosMap, varsMap
     })
     setCargando(false)
   }
@@ -201,49 +173,31 @@ export default function Reporte() {
     const zonaData = data.zonas[zonaKey]
     const c = zonaData.clientes.find(x => x.nombre === clienteNombre)
     if (!c) return
-    const zonaLabel = ZONA_DB[zonaKey]
+    const zonaLabel = zonaKey === 'Jambeli' ? 'Jambeli' : 'Puna'
     const doc = new jsPDF()
     const mesLabel = `${MESES[Number(mes)]} ${anio}`
     const pageW = doc.internal.pageSize.getWidth()
     const pageH = doc.internal.pageSize.getHeight()
 
-    // Header moderno
-    doc.setFillColor(...C.navy)
-    doc.rect(0, 0, pageW, 50, 'F')
-    doc.setFillColor(...C.blue)
-    doc.rect(0, 40, pageW, 10, 'F')
-
-    if (logoBase64) {
-      doc.addImage(logoBase64, 'PNG', 12, 6, 38, 32)
-    }
-
-    doc.setTextColor(...C.white)
-    doc.setFontSize(18)
-    doc.setFont('helvetica', 'bold')
+    fill(doc, 2, 40, 71); doc.rect(0, 0, pageW, 50, 'F')
+    fill(doc, 13, 108, 176); doc.rect(0, 41, pageW, 9, 'F')
+    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 6, 38, 32)
+    color(doc, 255, 255, 255)
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold')
     doc.text('COSTADRON', pageW - 14, 20, { align: 'right' })
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(180, 210, 240)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal')
+    color(doc, 180, 210, 240)
     doc.text('Reporte de servicio  |  ' + mesLabel, pageW - 14, 29, { align: 'right' })
     doc.text('El Oro, Ecuador', pageW - 14, 37, { align: 'right' })
 
-    // Cliente info
-    doc.setTextColor(...C.text)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
+    color(doc, 15, 23, 42)
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold')
     doc.text(c.nombre, 14, 64)
-
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...C.textMuted)
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal')
+    color(doc, 100, 116, 139)
     doc.text('Zona: ' + zonaLabel + '   |   Periodo: ' + mesLabel + '   |   Emitido: ' + new Date().toLocaleDateString('es'), 14, 71)
+    stroke(doc, 226, 232, 240); doc.setLineWidth(0.5); doc.line(14, 75, pageW - 14, 75)
 
-    // Linea separadora
-    doc.setDrawColor(...C.border)
-    doc.setLineWidth(0.5)
-    doc.line(14, 75, pageW - 14, 75)
-
-    // KPI cards
     const kpis = [
       { label: 'Jornadas', value: '' + c.jornadasCount },
       { label: 'Vuelos', value: '' + c.vuelos },
@@ -255,73 +209,49 @@ export default function Reporte() {
     const cardW = (pageW - 28 - 10) / 3
     const cardH = 22
     kpis.forEach((k, i) => {
-      const col = i % 3
-      const row = Math.floor(i / 3)
-      const x = 14 + col * (cardW + 5)
-      const y = 80 + row * (cardH + 4)
-      doc.setFillColor(...C.grayLight)
-      doc.roundedRect(x, y, cardW, cardH, 2, 2, 'F')
-      doc.setFontSize(7)
-      doc.setTextColor(...C.textMuted)
-      doc.setFont('helvetica', 'normal')
+      const col = i % 3; const row = Math.floor(i / 3)
+      const x = 14 + col * (cardW + 5); const y = 80 + row * (cardH + 4)
+      fill(doc, 248, 250, 252); doc.roundedRect(x, y, cardW, cardH, 2, 2, 'F')
+      doc.setFontSize(7); color(doc, 100, 116, 139); doc.setFont('helvetica', 'normal')
       doc.text(k.label.toUpperCase(), x + 5, y + 7)
-      doc.setFontSize(11)
-      doc.setTextColor(...C.text)
-      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11); color(doc, 15, 23, 42); doc.setFont('helvetica', 'bold')
       doc.text(k.value, x + 5, y + 16)
     })
 
-    // Total a pagar
     const totalY = 138
-    doc.setFillColor(...C.navy)
-    doc.roundedRect(14, totalY, pageW - 28, 22, 3, 3, 'F')
-    doc.setFillColor(...C.blue)
-    doc.roundedRect(14, totalY, 4, 22, 2, 2, 'F')
-    doc.setTextColor(...C.white)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
+    fill(doc, 2, 40, 71); doc.roundedRect(14, totalY, pageW - 28, 22, 3, 3, 'F')
+    fill(doc, 13, 108, 176); doc.roundedRect(14, totalY, 4, 22, 2, 2, 'F')
+    color(doc, 255, 255, 255)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal')
     doc.text('VALOR TOTAL A PAGAR', 24, totalY + 9)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold')
     doc.text(fmt$(c.valor), pageW - 18, totalY + 14, { align: 'right' })
 
-    // Detalle jornadas
-    doc.setTextColor(...C.navy)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
+    color(doc, 2, 40, 71)
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('DETALLE DE JORNADAS', 14, 172)
-    doc.setDrawColor(...C.blue)
-    doc.setLineWidth(1.5)
-    doc.line(14, 175, 65, 175)
+    stroke(doc, 13, 108, 176); doc.setLineWidth(1.5); doc.line(14, 175, 65, 175)
 
-    const jornadasCliente = c.jornadas.sort((a, b) => a.fecha.localeCompare(b.fecha))
     autoTable(doc, {
       startY: 179,
       head: [['Fecha', 'Vuelos', 'Hectareas', 'KG aplicados', 'Sacos', 'Valor']],
-      body: jornadasCliente.map(j => [
-        j.fecha, j.cantidad_vuelos,
-        Number(j.hectareas).toFixed(2),
-        Number(j.kg_esparcidos).toFixed(2),
-        (Number(j.kg_esparcidos) / 30).toFixed(1),
+      body: c.jornadas.sort((a, b) => a.fecha.localeCompare(b.fecha)).map(j => [
+        j.fecha, j.cantidad_vuelos, Number(j.hectareas).toFixed(2),
+        Number(j.kg_esparcidos).toFixed(2), (Number(j.kg_esparcidos) / 30).toFixed(1),
         fmt$(zonaData.factorVuelo * j.cantidad_vuelos)
       ]),
       foot: [['Total', c.vuelos, c.ha.toFixed(2), c.kg.toFixed(2), (c.kg / 30).toFixed(1), fmt$(c.valor)]],
-      headStyles: { fillColor: C.navy, textColor: C.white, fontSize: 7, fontStyle: 'bold', cellPadding: 4 },
-      footStyles: { fillColor: C.blueLight, textColor: C.jambeli, fontStyle: 'bold', fontSize: 7 },
-      bodyStyles: { fontSize: 8, textColor: C.text, cellPadding: 3.5 },
-      alternateRowStyles: { fillColor: C.grayLight },
+      headStyles: { fillColor: [2, 40, 71], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', cellPadding: 4 },
+      footStyles: { fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold', fontSize: 7 },
+      bodyStyles: { fontSize: 8, textColor: [15, 23, 42], cellPadding: 3.5 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: { 5: { halign: 'right' } },
       margin: { left: 14, right: 14 }
     })
 
-    // Footer
-    doc.setFillColor(...C.navy)
-    doc.rect(0, pageH - 12, pageW, 12, 'F')
-    doc.setTextColor(150, 180, 210)
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'normal')
+    fill(doc, 2, 40, 71); doc.rect(0, pageH - 12, pageW, 12, 'F')
+    color(doc, 150, 180, 210); doc.setFontSize(7); doc.setFont('helvetica', 'normal')
     doc.text('CostaMarket S.A.  |  Operacion COSTADRON  |  El Oro, Ecuador', pageW / 2, pageH - 4, { align: 'center' })
-
     doc.save('COSTADRON_' + c.nombre + '_' + MESES[Number(mes)] + anio + '.pdf')
   }
 
@@ -332,40 +262,26 @@ export default function Reporte() {
     const pageW = doc.internal.pageSize.getWidth()
     const pageH = doc.internal.pageSize.getHeight()
 
-    // ─── PAGINA 1 ───────────────────────────────────────────────
-    // Header
-    doc.setFillColor(...C.navy)
-    doc.rect(0, 0, pageW, 52, 'F')
-    doc.setFillColor(...C.blue)
-    doc.rect(0, 42, pageW, 10, 'F')
-
-    if (logoBase64) {
-      doc.addImage(logoBase64, 'PNG', 12, 5, 42, 34)
-    }
-
-    doc.setTextColor(...C.white)
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
+    // Header pagina 1
+    fill(doc, 2, 40, 71); doc.rect(0, 0, pageW, 52, 'F')
+    fill(doc, 13, 108, 176); doc.rect(0, 42, pageW, 10, 'F')
+    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 5, 42, 34)
+    color(doc, 255, 255, 255)
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold')
     doc.text('REPORTE OPERACIONAL', pageW - 14, 18, { align: 'right' })
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(180, 210, 240)
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal')
+    color(doc, 180, 210, 240)
     doc.text('INTERNO  |  COSTADRON', pageW - 14, 27, { align: 'right' })
     doc.setFontSize(8)
     doc.text(mesLabel + '   |   Generado: ' + new Date().toLocaleDateString('es'), pageW - 14, 37, { align: 'right' })
 
-    // ── Resumen ejecutivo
+    // KPIs consolidados
     let y = 64
-    doc.setTextColor(...C.navy)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
+    color(doc, 2, 40, 71); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('RESUMEN EJECUTIVO', 14, y)
-    doc.setDrawColor(...C.blue)
-    doc.setLineWidth(1.5)
-    doc.line(14, y + 3, 70, y + 3)
+    stroke(doc, 13, 108, 176); doc.setLineWidth(1.5); doc.line(14, y + 3, 70, y + 3)
     y += 8
 
-    // KPI cards 3x3
     const kpis = [
       { label: 'Costo total', value: fmt$(data.totalCosto) },
       { label: 'Vuelos', value: '' + data.totalVuelos },
@@ -380,50 +296,51 @@ export default function Reporte() {
     const cW = (pageW - 28 - 8) / 3
     const cH = 20
     kpis.forEach((k, i) => {
-      const col = i % 3
-      const row = Math.floor(i / 3)
-      const x = 14 + col * (cW + 4)
-      const cy = y + row * (cH + 3)
-      doc.setFillColor(...C.grayLight)
-      doc.roundedRect(x, cy, cW, cH, 2, 2, 'F')
-      doc.setFontSize(6.5)
-      doc.setTextColor(...C.textMuted)
-      doc.setFont('helvetica', 'normal')
+      const col = i % 3; const row = Math.floor(i / 3)
+      const x = 14 + col * (cW + 4); const cy = y + row * (cH + 3)
+      fill(doc, 248, 250, 252); doc.roundedRect(x, cy, cW, cH, 2, 2, 'F')
+      doc.setFontSize(6.5); color(doc, 100, 116, 139); doc.setFont('helvetica', 'normal')
       doc.text(k.label.toUpperCase(), x + 4, cy + 6)
-      doc.setFontSize(10)
-      doc.setTextColor(...C.text)
-      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(10); color(doc, 15, 23, 42); doc.setFont('helvetica', 'bold')
       doc.text(k.value, x + 4, cy + 15)
     })
     y += 3 * (cH + 3) + 8
 
-    // ── Desglose por zona
-    doc.setTextColor(...C.navy)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
+    // Desglose por zona
+    color(doc, 2, 40, 71); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('DESGLOSE POR ZONA', 14, y)
-    doc.setDrawColor(...C.blue)
-    doc.setLineWidth(1.5)
-    doc.line(14, y + 3, 75, y + 3)
+    stroke(doc, 13, 108, 176); doc.setLineWidth(1.5); doc.line(14, y + 3, 75, y + 3)
     y += 7
 
     autoTable(doc, {
       startY: y,
       head: [['Zona', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo fijo', 'Costo var.', 'Total', 'Costo/vuelo']],
       body: [
-        ['Jambeli', data.zonas.Jambeli.totalVuelos, data.zonas.Jambeli.totalHa.toFixed(1), data.zonas.Jambeli.totalKg.toFixed(0), (data.zonas.Jambeli.totalKg / 30).toFixed(1), fmt$(data.zonas.Jambeli.costoFijo), fmt$(data.zonas.Jambeli.costoVar), fmt$(data.zonas.Jambeli.totalCosto), fmt$(data.zonas.Jambeli.totalVuelos > 0 ? data.zonas.Jambeli.totalCosto / data.zonas.Jambeli.totalVuelos : 0)],
-        ['Puna', data.zonas.Puna.totalVuelos, data.zonas.Puna.totalHa.toFixed(1), data.zonas.Puna.totalKg.toFixed(0), (data.zonas.Puna.totalKg / 30).toFixed(1), fmt$(data.zonas.Puna.costoFijo), fmt$(data.zonas.Puna.costoVar), fmt$(data.zonas.Puna.totalCosto), fmt$(data.zonas.Puna.totalVuelos > 0 ? data.zonas.Puna.totalCosto / data.zonas.Puna.totalVuelos : 0)],
+        ['Jambeli',
+          data.zonas.Jambeli.totalVuelos, data.zonas.Jambeli.totalHa.toFixed(1),
+          data.zonas.Jambeli.totalKg.toFixed(0), (data.zonas.Jambeli.totalKg / 30).toFixed(1),
+          fmt$(data.zonas.Jambeli.costoFijo), fmt$(data.zonas.Jambeli.costoVar),
+          fmt$(data.zonas.Jambeli.totalCosto),
+          fmt$(data.zonas.Jambeli.totalVuelos > 0 ? data.zonas.Jambeli.totalCosto / data.zonas.Jambeli.totalVuelos : 0)
+        ],
+        ['Puna',
+          data.zonas.Puna.totalVuelos, data.zonas.Puna.totalHa.toFixed(1),
+          data.zonas.Puna.totalKg.toFixed(0), (data.zonas.Puna.totalKg / 30).toFixed(1),
+          fmt$(data.zonas.Puna.costoFijo), fmt$(data.zonas.Puna.costoVar),
+          fmt$(data.zonas.Puna.totalCosto),
+          fmt$(data.zonas.Puna.totalVuelos > 0 ? data.zonas.Puna.totalCosto / data.zonas.Puna.totalVuelos : 0)
+        ],
       ],
-      headStyles: { fillColor: C.navy, textColor: C.white, fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
+      headStyles: { fillColor: [2, 40, 71], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
       bodyStyles: { fontSize: 7.5, cellPadding: 3.5 },
       didParseCell: (hookData) => {
         if (hookData.section === 'body') {
           if (hookData.row.index === 0) {
-            hookData.cell.styles.fillColor = C.jambeliLight
-            hookData.cell.styles.textColor = C.jambeli
+            hookData.cell.styles.fillColor = [239, 246, 255]
+            hookData.cell.styles.textColor = [30, 64, 175]
           } else {
-            hookData.cell.styles.fillColor = C.punaLight
-            hookData.cell.styles.textColor = C.puna
+            hookData.cell.styles.fillColor = [240, 253, 244]
+            hookData.cell.styles.textColor = [22, 101, 52]
           }
         }
       },
@@ -431,91 +348,74 @@ export default function Reporte() {
     })
     y = doc.lastAutoTable.finalY + 10
 
-    // ── Clientes Jambeli
-    doc.setFillColor(...C.jambeli[0], C.jambeli[1], C.jambeli[2])
-    doc.setTextColor(...C.jambeli)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
+    // Clientes Jambeli
+    color(doc, 30, 64, 175); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('CLIENTES JAMBELI', 14, y)
-    doc.setDrawColor(...C.jambeli)
-    doc.setLineWidth(1.5)
-    doc.line(14, y + 3, 72, y + 3)
+    stroke(doc, 30, 64, 175); doc.setLineWidth(1.5); doc.line(14, y + 3, 72, y + 3)
     y += 7
 
     autoTable(doc, {
       startY: y,
       head: [['Cliente', 'Jornadas', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo/ha', 'A facturar', '%']],
       body: data.zonas.Jambeli.clientes.map(c => [
-        c.nombre, c.jornadasCount, c.vuelos, c.ha.toFixed(1), c.kg.toFixed(0), (c.kg / 30).toFixed(1), fmt$(c.costoHa), fmt$(c.valor), c.pct.toFixed(1) + '%'
+        c.nombre, c.jornadasCount, c.vuelos, c.ha.toFixed(1), c.kg.toFixed(0),
+        (c.kg / 30).toFixed(1), fmt$(c.costoHa), fmt$(c.valor), c.pct.toFixed(1) + '%'
       ]),
       foot: [['Total Jambeli', '', data.zonas.Jambeli.totalVuelos, data.zonas.Jambeli.totalHa.toFixed(1), data.zonas.Jambeli.totalKg.toFixed(0), (data.zonas.Jambeli.totalKg / 30).toFixed(1), '', fmt$(data.zonas.Jambeli.totalCosto), '100%']],
-      headStyles: { fillColor: C.jambeli, textColor: C.white, fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
-      footStyles: { fillColor: C.jambeliLight, textColor: C.jambeli, fontStyle: 'bold', fontSize: 7 },
-      bodyStyles: { fontSize: 7, cellPadding: 3, textColor: C.text },
+      headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
+      footStyles: { fillColor: [219, 234, 254], textColor: [30, 64, 175], fontStyle: 'bold', fontSize: 7 },
+      bodyStyles: { fontSize: 7, cellPadding: 3, textColor: [15, 23, 42] },
       alternateRowStyles: { fillColor: [245, 248, 255] },
       columnStyles: { 7: { halign: 'right' }, 8: { halign: 'right' } },
       margin: { left: 14, right: 14 }
     })
     y = doc.lastAutoTable.finalY + 10
 
-    // ── Clientes Puna
-    doc.setTextColor(...C.puna)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
+    // Clientes Puna
+    color(doc, 22, 101, 52); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('CLIENTES PUNA', 14, y)
-    doc.setDrawColor(...C.puna)
-    doc.setLineWidth(1.5)
-    doc.line(14, y + 3, 62, y + 3)
+    stroke(doc, 22, 101, 52); doc.setLineWidth(1.5); doc.line(14, y + 3, 62, y + 3)
     y += 7
 
     autoTable(doc, {
       startY: y,
       head: [['Cliente', 'Jornadas', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo/ha', 'A facturar', '%']],
       body: data.zonas.Puna.clientes.map(c => [
-        c.nombre, c.jornadasCount, c.vuelos, c.ha.toFixed(1), c.kg.toFixed(0), (c.kg / 30).toFixed(1), fmt$(c.costoHa), fmt$(c.valor), c.pct.toFixed(1) + '%'
+        c.nombre, c.jornadasCount, c.vuelos, c.ha.toFixed(1), c.kg.toFixed(0),
+        (c.kg / 30).toFixed(1), fmt$(c.costoHa), fmt$(c.valor), c.pct.toFixed(1) + '%'
       ]),
       foot: [['Total Puna', '', data.zonas.Puna.totalVuelos, data.zonas.Puna.totalHa.toFixed(1), data.zonas.Puna.totalKg.toFixed(0), (data.zonas.Puna.totalKg / 30).toFixed(1), '', fmt$(data.zonas.Puna.totalCosto), '100%']],
-      headStyles: { fillColor: C.puna, textColor: C.white, fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
-      footStyles: { fillColor: C.punaLight, textColor: C.puna, fontStyle: 'bold', fontSize: 7 },
-      bodyStyles: { fontSize: 7, cellPadding: 3, textColor: C.text },
+      headStyles: { fillColor: [22, 101, 52], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
+      footStyles: { fillColor: [220, 252, 231], textColor: [22, 101, 52], fontStyle: 'bold', fontSize: 7 },
+      bodyStyles: { fontSize: 7, cellPadding: 3, textColor: [15, 23, 42] },
       alternateRowStyles: { fillColor: [245, 255, 248] },
       columnStyles: { 7: { halign: 'right' }, 8: { halign: 'right' } },
       margin: { left: 14, right: 14 }
     })
 
-    // Footer pag 1
-    doc.setFillColor(...C.navy)
-    doc.rect(0, pageH - 12, pageW, 12, 'F')
-    doc.setTextColor(150, 180, 210)
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'normal')
+    fill(doc, 2, 40, 71); doc.rect(0, pageH - 12, pageW, 12, 'F')
+    color(doc, 150, 180, 210); doc.setFontSize(7); doc.setFont('helvetica', 'normal')
     doc.text('CostaMarket S.A.  |  Operacion COSTADRON  |  Documento interno confidencial', pageW / 2, pageH - 4, { align: 'center' })
 
-    // ─── PAGINA 2 — Composicion de costos ────────────────────────
+    // PAGINA 2 — Composicion de costos
     doc.addPage()
-
-    doc.setFillColor(...C.navy)
-    doc.rect(0, 0, pageW, 28, 'F')
-    doc.setFillColor(...C.blue)
-    doc.rect(0, 20, pageW, 8, 'F')
-    doc.setTextColor(...C.white)
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
+    fill(doc, 2, 40, 71); doc.rect(0, 0, pageW, 28, 'F')
+    fill(doc, 13, 108, 176); doc.rect(0, 20, pageW, 8, 'F')
+    color(doc, 255, 255, 255); doc.setFontSize(13); doc.setFont('helvetica', 'bold')
     doc.text('COMPOSICION DE COSTOS  |  ' + mesLabel, pageW / 2, 14, { align: 'center' })
 
     let y2 = 38
+    const zonaConfigs = [
+      { key: 'Jambeli', label: 'JAMBELI', hr: [30, 64, 175], hf: [219, 234, 254], tf: [30, 64, 175], alt: [245, 248, 255] },
+      { key: 'Puna', label: 'PUNA', hr: [22, 101, 52], hf: [220, 252, 231], tf: [22, 101, 52], alt: [245, 255, 248] },
+    ]
 
-    ;[['Jambeli', C.jambeli, C.jambeliLight], ['Puna', C.puna, C.punaLight]].forEach(([zonaKey, colorH, colorFoot]) => {
-      const z = data.zonas[zonaKey]
-      const label = zonaKey === 'Jambeli' ? 'JAMBELI' : 'PUNA'
-
-      doc.setTextColor(...colorH)
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
+    zonaConfigs.forEach(({ key, label, hr, hf, tf, alt }) => {
+      const z = data.zonas[key]
+      color(doc, hr[0], hr[1], hr[2]); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
       doc.text('COSTOS ' + label, 14, y2)
-      doc.setDrawColor(...colorH)
-      doc.setLineWidth(1.5)
-      doc.line(14, y2 + 3, 14 + label.length * 5.5, y2 + 3)
+      stroke(doc, hr[0], hr[1], hr[2]); doc.setLineWidth(1.5)
+      doc.line(14, y2 + 3, 14 + label.length * 5.2, y2 + 3)
       y2 += 7
 
       const todosCostos = [
@@ -531,22 +431,19 @@ export default function Reporte() {
         startY: y2,
         head: [['Componente de costo', 'Monto', '% del total zona']],
         body: todosCostos.map(c => [c.nombre, fmt$(c.monto), z.totalCosto > 0 ? (c.monto / z.totalCosto * 100).toFixed(1) + '%' : '0%']),
-        foot: [['Total ' + (zonaKey === 'Jambeli' ? 'Jambeli' : 'Puna'), fmt$(z.totalCosto), '100%']],
-        headStyles: { fillColor: colorH, textColor: C.white, fontSize: 8, fontStyle: 'bold', cellPadding: 4 },
-        footStyles: { fillColor: colorFoot, textColor: colorH, fontStyle: 'bold', fontSize: 8 },
-        bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: C.text },
-        alternateRowStyles: { fillColor: zonaKey === 'Jambeli' ? [245, 248, 255] : [245, 255, 248] },
+        foot: [['Total ' + (key === 'Jambeli' ? 'Jambeli' : 'Puna'), fmt$(z.totalCosto), '100%']],
+        headStyles: { fillColor: hr, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', cellPadding: 4 },
+        footStyles: { fillColor: hf, textColor: tf, fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: [15, 23, 42] },
+        alternateRowStyles: { fillColor: alt },
         columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
         margin: { left: 14, right: 14 }
       })
       y2 = doc.lastAutoTable.finalY + 12
     })
 
-    doc.setFillColor(...C.navy)
-    doc.rect(0, pageH - 12, pageW, 12, 'F')
-    doc.setTextColor(150, 180, 210)
-    doc.setFontSize(7)
-    doc.setFont('helvetica', 'normal')
+    fill(doc, 2, 40, 71); doc.rect(0, pageH - 12, pageW, 12, 'F')
+    color(doc, 150, 180, 210); doc.setFontSize(7); doc.setFont('helvetica', 'normal')
     doc.text('CostaMarket S.A.  |  Operacion COSTADRON  |  Documento interno confidencial', pageW / 2, pageH - 4, { align: 'center' })
 
     doc.save('COSTADRON_Reporte_Interno_' + MESES[Number(mes)] + anio + '.pdf')
@@ -574,7 +471,6 @@ export default function Reporte() {
           </button>
         </div>
 
-        {/* KPIs consolidados */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
           {[
             { label: 'Costo total', value: fmt$(data.totalCosto), sub: data.todosClientes.length + ' clientes' },
@@ -590,7 +486,6 @@ export default function Reporte() {
           ))}
         </div>
 
-        {/* KPIs por zona */}
         {[
           { zonaKey: 'Jambeli', label: 'Jambelí', bg: '#eff6ff' },
           { zonaKey: 'Puna', label: 'Puná', bg: '#f0fdf4' }
@@ -615,7 +510,6 @@ export default function Reporte() {
 
         <div className="mb-5" />
 
-        {/* Tablas de clientes por zona */}
         {[
           { zonaKey: 'Jambeli', label: 'Jambelí', color: '#3b82f6', textColor: '#1e40af' },
           { zonaKey: 'Puna', label: 'Puná', color: '#22c55e', textColor: '#166534' }
@@ -654,9 +548,7 @@ export default function Reporte() {
                         <td className="py-2">
                           <button onClick={() => generarPDFCliente(zonaKey, c.nombre)}
                             className="text-xs px-2 py-1 rounded text-white"
-                            style={{ background: textColor }}
-                            onMouseEnter={e => e.target.style.opacity = '0.85'}
-                            onMouseLeave={e => e.target.style.opacity = '1'}>
+                            style={{ background: textColor }}>
                             PDF &#8595;
                           </button>
                         </td>
@@ -683,11 +575,10 @@ export default function Reporte() {
           )
         })}
 
-        {/* Composicion de costos por zona */}
         {[
-          { zonaKey: 'Jambeli', label: 'Jambelí', color: '#1e40af', bg: '#eff6ff' },
-          { zonaKey: 'Puna', label: 'Puná', color: '#166534', bg: '#f0fdf4' }
-        ].map(({ zonaKey, label, color, bg }) => {
+          { zonaKey: 'Jambeli', label: 'Jambelí', color: '#1e40af' },
+          { zonaKey: 'Puna', label: 'Puná', color: '#166534' }
+        ].map(({ zonaKey, label, color }) => {
           const z = data.zonas[zonaKey]
           if (!z.fijos) return null
           return (
