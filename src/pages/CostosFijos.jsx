@@ -14,10 +14,6 @@ const ZONA_CONFIG = {
     color: '#eff6ff',
     border: '#bfdbfe',
     text: '#1e40af',
-    campos: ['sueldo_piloto', 'sueldo_botero', 'vacuna', 'seguro_dron_anual',
-      'dep_dron_costo_total', 'dep_dron_meses_vida_util',
-      'dep_baterias_costo_total', 'dep_baterias_vida_util_ciclos',
-      'dep_generador_costo_total', 'dep_generador_meses_vida_util']
   },
   'Puná': {
     label: 'Puná — Dron 2',
@@ -25,9 +21,6 @@ const ZONA_CONFIG = {
     color: '#f0fdf4',
     border: '#bbf7d0',
     text: '#166534',
-    campos: ['sueldo_piloto', 'vacuna', 'seguro_dron_anual',
-      'dep_dron_costo_total', 'dep_dron_meses_vida_util',
-      'dep_baterias_costo_total', 'dep_baterias_vida_util_ciclos']
   }
 }
 
@@ -103,7 +96,7 @@ export default function CostosFijos() {
       .upsert(payload, { onConflict: 'anio,zona' })
     if (error) { showToast('Error al guardar.'); return }
     setGuardado(g => ({ ...g, [zona]: true }))
-    showToast(`Costos de ${zona} guardados.`)
+    showToast('Costos de ' + zona + ' guardados.')
   }
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
@@ -158,7 +151,7 @@ export default function CostosFijos() {
 
                 {/* Header zona */}
                 <div className="rounded-xl p-4 flex items-center justify-between"
-                  style={{ background: cfg.color, border: `1px solid ${cfg.border}` }}>
+                  style={{ background: cfg.color, border: '1px solid ' + cfg.border }}>
                   <div>
                     <div className="text-sm font-medium" style={{ color: cfg.text }}>{cfg.label}</div>
                     <div className="text-xs mt-0.5" style={{ color: cfg.text, opacity: 0.7 }}>Piloto: {cfg.piloto}</div>
@@ -201,6 +194,7 @@ export default function CostosFijos() {
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                         <input type="number" step="0.01" {...inpDollar(zona, 'sueldo_piloto')} />
                       </div>
+                      <div className="text-xs text-gray-400 mt-1">por mes</div>
                     </div>
                     {zona === 'Jambelí' && (
                       <div>
@@ -209,6 +203,7 @@ export default function CostosFijos() {
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                           <input type="number" step="0.01" {...inpDollar(zona, 'sueldo_botero')} />
                         </div>
+                        <div className="text-xs text-gray-400 mt-1">por mes</div>
                       </div>
                     )}
                   </div>
@@ -224,7 +219,7 @@ export default function CostosFijos() {
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                         <input type="number" step="0.01" {...inpDollar(zona, 'seguro_dron_anual')} />
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">-> {fmt$(t.seguroMes)}/mes</div>
+                      <div className="text-xs text-gray-400 mt-1">se divide por 12 automaticamente &rarr; {fmt$(t.seguroMes)}/mes</div>
                     </div>
                     <div>
                       <label className="block text-sm text-gray-500 mb-1.5">Vacuna</label>
@@ -232,6 +227,7 @@ export default function CostosFijos() {
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                         <input type="number" step="0.01" {...inpDollar(zona, 'vacuna')} />
                       </div>
+                      <div className="text-xs text-gray-400 mt-1">por mes</div>
                     </div>
                   </div>
                 </div>
@@ -249,8 +245,11 @@ export default function CostosFijos() {
                     </div>
                     <div>
                       <label className="block text-sm text-gray-500 mb-1.5">Vida util (meses)</label>
-                      <input type="number" step="1" {...inp(zona, 'dep_dron_meses_vida_util')} />
-                      <div className="text-xs text-gray-400 mt-1">-> {fmt$(t.depDron)}/mes</div>
+                      <div className="relative">
+                        <input type="number" step="1" {...inp(zona, 'dep_dron_meses_vida_util')} className="w-full h-10 px-3 pr-16 border border-gray-200 rounded-lg text-sm outline-none transition-all" onFocus={e => e.target.style.borderColor = '#0D6CB0'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">meses</span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">&rarr; {fmt$(t.depDron)}/mes</div>
                     </div>
                   </div>
                 </div>
@@ -268,8 +267,11 @@ export default function CostosFijos() {
                     </div>
                     <div>
                       <label className="block text-sm text-gray-500 mb-1.5">Vida util en ciclos</label>
-                      <input type="number" step="1" {...inp(zona, 'dep_baterias_vida_util_ciclos')} />
-                      <div className="text-xs text-gray-400 mt-1">-> {fmt$(t.depBatCiclo)}/ciclo</div>
+                      <div className="relative">
+                        <input type="number" step="1" {...inp(zona, 'dep_baterias_vida_util_ciclos')} className="w-full h-10 px-3 pr-16 border border-gray-200 rounded-lg text-sm outline-none transition-all" onFocus={e => e.target.style.borderColor = '#0D6CB0'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ciclos</span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">&rarr; {fmt$(t.depBatCiclo)}/ciclo</div>
                     </div>
                   </div>
                 </div>
@@ -289,8 +291,11 @@ export default function CostosFijos() {
                       </div>
                       <div>
                         <label className="block text-sm text-gray-500 mb-1.5">Vida util (meses)</label>
-                        <input type="number" step="1" {...inp(zona, 'dep_generador_meses_vida_util')} />
-                        <div className="text-xs text-gray-400 mt-1">-> {fmt$(t.depGen)}/mes</div>
+                        <div className="relative">
+                          <input type="number" step="1" {...inp(zona, 'dep_generador_meses_vida_util')} className="w-full h-10 px-3 pr-16 border border-gray-200 rounded-lg text-sm outline-none transition-all" onFocus={e => e.target.style.borderColor = '#0D6CB0'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">meses</span>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">&rarr; {fmt$(t.depGen)}/mes</div>
                       </div>
                     </div>
                   </div>
@@ -315,7 +320,7 @@ export default function CostosFijos() {
         {toast && (
           <div className="fixed bottom-6 right-6 flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm shadow-lg"
             style={{ background: '#dbeafe', border: '1px solid #bfdbfe', color: '#1e40af' }}>
-            checkmark {toast}
+            &#10003; {toast}
           </div>
         )}
 
