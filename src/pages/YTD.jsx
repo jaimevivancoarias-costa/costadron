@@ -22,9 +22,6 @@ const ZONA_CLIENTE = {
   'MAREEXPORT': 'Jambeli', 'AGRIMARINE': 'Jambeli'
 }
 
-// Usamos claves sin tildes para evitar problemas de encoding
-const ZONA_LABEL = { 'Jambeli': 'Jambelí', 'Puna': 'Puná' }
-
 function fmt$(n) {
   return '$' + Number(n || 0).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
@@ -40,6 +37,8 @@ function BarChartDoble({ data, keyJ, keyP, fmtFn }) {
         const pctTotal = total / max * 100
         const pctJ = total > 0 ? vJ / total * 100 : 0
         const pctP = total > 0 ? vP / total * 100 : 0
+        const showLabelJ = pctJ > 20
+        const showLabelP = pctP > 20
         return (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', height: '100%', justifyContent: 'flex-end' }}>
             {total > 0 && (
@@ -50,12 +49,20 @@ function BarChartDoble({ data, keyJ, keyP, fmtFn }) {
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: Math.max(pctTotal, total > 0 ? 5 : 0) + '%', borderRadius: '3px 3px 0 0', overflow: 'hidden' }}>
               {vP > 0 && (
                 <div style={{ background: '#22c55e', width: '100%', flex: pctP, minHeight: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {pctP > 15 && <span style={{ fontSize: '7px', color: '#fff' }}>{fmtFn ? fmtFn(vP) : Math.round(vP)}</span>}
+                  {showLabelP && (
+                    <span style={{ fontSize: '7px', color: '#fff' }}>
+                      {fmtFn ? fmtFn(vP) : Math.round(vP)}
+                    </span>
+                  )}
                 </div>
               )}
               {vJ > 0 && (
                 <div style={{ background: '#3b82f6', width: '100%', flex: pctJ, minHeight: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {pctJ > 15 && <span style={{ fontSize: '7px', color: '#fff' }}>{fmtFn ? fmtFn(vJ) : Math.round(vJ)}</span>}
+                  {showLabelJ && (
+                    <span style={{ fontSize: '7px', color: '#fff' }}>
+                      {fmtFn ? fmtFn(vJ) : Math.round(vJ)}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -72,11 +79,11 @@ function Leyenda() {
     <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#3b82f6' }} />
-        <span style={{ fontSize: '11px', color: '#6b7280' }}>Jambelí</span>
+        <span style={{ fontSize: '11px', color: '#6b7280' }}>Jambeli</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#22c55e' }} />
-        <span style={{ fontSize: '11px', color: '#6b7280' }}>Puná</span>
+        <span style={{ fontSize: '11px', color: '#6b7280' }}>Puna</span>
       </div>
     </div>
   )
@@ -102,9 +109,13 @@ export default function YTD() {
 
     if (!jornadas) { setCargando(false); return }
 
-    // Mapear fijos por zona (usando nombre exacto de DB)
     const fijosMap = {}
-    ;(fijosZona || []).forEach(f => { fijosMap[f.zona] = f })
+    ;(fijosZona || []).forEach(f => {
+      if (f.zona === 'Jambeli' || f.zona === 'Jambeli') fijosMap['Jambeli'] = f
+      if (f.zona === 'Puna' || f.zona === 'Puna') fijosMap['Puna'] = f
+      if (f.zona === 'Jambel\u00ed') fijosMap['Jambeli'] = f
+      if (f.zona === 'Pun\u00e1') fijosMap['Puna'] = f
+    })
 
     const porMes = {}
     for (let m = 1; m <= 12; m++) {
@@ -148,12 +159,10 @@ export default function YTD() {
 
     for (let m = 1; m <= 12; m++) {
       const md = porMes[m]
-
-      // Buscar fijos por nombre exacto en DB (con tildes)
-      const fijosJ = fijosMap['Jambelí']
-      const fijosP = fijosMap['Puná']
-      const varJ = variables?.find(v => v.mes === m && v.zona === 'Jambelí')
-      const varP = variables?.find(v => v.mes === m && v.zona === 'Puná')
+      const fijosJ = fijosMap['Jambeli']
+      const fijosP = fijosMap['Puna']
+      const varJ = variables?.find(v => v.mes === m && (v.zona === 'Jambeli' || v.zona === 'Jambel\u00ed'))
+      const varP = variables?.find(v => v.mes === m && (v.zona === 'Puna' || v.zona === 'Pun\u00e1'))
 
       const costoJ = md.Jambeli.vuelos > 0 ? calcCostoZona(fijosJ, md.Jambeli.cargas, varJ) : 0
       const costoP = md.Puna.vuelos > 0 ? calcCostoZona(fijosP, md.Puna.cargas, varP) : 0
@@ -188,16 +197,12 @@ export default function YTD() {
     }
 
     setClientesJambeli(
-      Object.entries(acumJambeli)
-        .filter(([, v]) => v.total > 0)
-        .map(([nombre, v]) => ({ nombre, ...v }))
-        .sort((a, b) => b.total - a.total)
+      Object.entries(acumJambeli).filter(([, v]) => v.total > 0)
+        .map(([nombre, v]) => ({ nombre, ...v })).sort((a, b) => b.total - a.total)
     )
     setClientesPuna(
-      Object.entries(acumPuna)
-        .filter(([, v]) => v.total > 0)
-        .map(([nombre, v]) => ({ nombre, ...v }))
-        .sort((a, b) => b.total - a.total)
+      Object.entries(acumPuna).filter(([, v]) => v.total > 0)
+        .map(([nombre, v]) => ({ nombre, ...v })).sort((a, b) => b.total - a.total)
     )
     setDatos(resultado)
     setCargando(false)
@@ -224,9 +229,9 @@ export default function YTD() {
   const renderTablaClientes = (clientes, zonaLabel, colorText, totalZona, getCosto) => (
     <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 rounded-full" style={{ background: zonaLabel === 'Jambelí' ? '#3b82f6' : '#22c55e' }} />
+        <div className="w-2 h-2 rounded-full" style={{ background: zonaLabel === 'Jambeli' ? '#3b82f6' : '#22c55e' }} />
         <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-          Facturación por cliente — {zonaLabel}
+          Facturacion por cliente &mdash; {zonaLabel}
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -246,7 +251,7 @@ export default function YTD() {
                 <td className="py-2 font-medium">{c.nombre}</td>
                 {mesesConDatos.map(d => (
                   <td key={d.mes} className="py-2 text-right text-gray-600 px-1">
-                    {c.porMes[d.mes] > 0 ? fmt$(c.porMes[d.mes]) : '—'}
+                    {c.porMes[d.mes] > 0 ? fmt$(c.porMes[d.mes]) : '\u2014'}
                   </td>
                 ))}
                 <td className="py-2 text-right font-medium" style={{ color: colorText }}>{fmt$(c.total)}</td>
@@ -287,7 +292,7 @@ export default function YTD() {
           {[
             { label: 'Costo YTD', value: fmt$(totalCosto) },
             { label: 'Vuelos YTD', value: totalVuelos },
-            { label: 'Hectáreas YTD', value: totalHa.toFixed(0) },
+            { label: 'Hectareas YTD', value: totalHa.toFixed(0) },
             { label: 'KG YTD', value: totalKg.toFixed(0) },
             { label: 'Sacos YTD', value: (totalKg / 30).toFixed(0) },
           ].map(k => (
@@ -298,13 +303,13 @@ export default function YTD() {
           ))}
         </div>
 
-        {/* KPIs Jambelí */}
-        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Jambelí</div>
+        {/* KPIs Jambeli */}
+        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Jambeli</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
           {[
             { label: 'Costo', value: fmt$(totalCostoJ) },
             { label: 'Vuelos', value: totalVuelosJ },
-            { label: 'Hectáreas', value: totalHaJ.toFixed(0) },
+            { label: 'Hectareas', value: totalHaJ.toFixed(0) },
             { label: 'KG', value: totalKgJ.toFixed(0) },
             { label: 'Sacos', value: (totalKgJ / 30).toFixed(0) },
           ].map(k => (
@@ -315,13 +320,13 @@ export default function YTD() {
           ))}
         </div>
 
-        {/* KPIs Puná */}
-        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Puná</div>
+        {/* KPIs Puna */}
+        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Puna</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
           {[
             { label: 'Costo', value: fmt$(totalCostoP) },
             { label: 'Vuelos', value: totalVuelosP },
-            { label: 'Hectáreas', value: totalHaP.toFixed(0) },
+            { label: 'Hectareas', value: totalHaP.toFixed(0) },
             { label: 'KG', value: totalKgP.toFixed(0) },
             { label: 'Sacos', value: (totalKgP / 30).toFixed(0) },
           ].map(k => (
@@ -332,7 +337,7 @@ export default function YTD() {
           ))}
         </div>
 
-        {/* Gráficas */}
+        {/* Graficas */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Costo operacional por mes</div>
           <Leyenda />
@@ -346,17 +351,17 @@ export default function YTD() {
             <BarChartDoble data={datos} keyJ="vuelosJ" keyP="vuelosP" />
           </div>
           <div className="bg-white border border-gray-100 rounded-xl p-5">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Hectáreas por mes</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Hectareas por mes</div>
             <Leyenda />
             <BarChartDoble data={datos} keyJ="haJ" keyP="haP" fmtFn={v => v.toFixed(0)} />
           </div>
         </div>
 
-        {/* Facturación por cliente — dos tablas separadas */}
-        {renderTablaClientes(clientesJambeli, 'Jambelí', '#1e40af', totalClientesJ, d => d.costoJ)}
-        {renderTablaClientes(clientesPuna, 'Puná', '#166534', totalClientesP, d => d.costoP)}
+        {/* Facturacion por cliente — dos tablas */}
+        {renderTablaClientes(clientesJambeli, 'Jambeli', '#1e40af', totalClientesJ, d => d.costoJ)}
+        {renderTablaClientes(clientesPuna, 'Puna', '#166534', totalClientesP, d => d.costoP)}
 
-        {/* Detalle por mes — cards estilo dashboard */}
+        {/* Detalle por mes — cards */}
         <div className="mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-3">Detalle por mes</div>
           <div className="flex flex-col gap-3">
@@ -369,7 +374,7 @@ export default function YTD() {
                 <div className="grid grid-cols-4 gap-3 mb-3">
                   {[
                     { label: 'Vuelos', value: d.vuelos },
-                    { label: 'Hectáreas', value: d.ha.toFixed(0) + ' ha' },
+                    { label: 'Hectareas', value: d.ha.toFixed(0) + ' ha' },
                     { label: 'KG', value: d.kg.toFixed(0) },
                     { label: 'Sacos', value: (d.kg / 30).toFixed(1) },
                   ].map(k => (
@@ -381,8 +386,8 @@ export default function YTD() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: 'Jambelí', costo: d.costoJ, vuelos: d.vuelosJ, ha: d.haJ, color: '#3b82f6', bg: '#eff6ff', pct: d.costo > 0 ? d.costoJ / d.costo * 100 : 0 },
-                    { label: 'Puná', costo: d.costoP, vuelos: d.vuelosP, ha: d.haP, color: '#22c55e', bg: '#f0fdf4', pct: d.costo > 0 ? d.costoP / d.costo * 100 : 0 },
+                    { label: 'Jambeli', costo: d.costoJ, vuelos: d.vuelosJ, ha: d.haJ, color: '#3b82f6', bg: '#eff6ff', pct: d.costo > 0 ? d.costoJ / d.costo * 100 : 0 },
+                    { label: 'Puna', costo: d.costoP, vuelos: d.vuelosP, ha: d.haP, color: '#22c55e', bg: '#f0fdf4', pct: d.costo > 0 ? d.costoP / d.costo * 100 : 0 },
                   ].map(z => (
                     <div key={z.label} className="rounded-lg p-3" style={{ background: z.bg }}>
                       <div className="flex items-center justify-between mb-1.5">
@@ -396,7 +401,7 @@ export default function YTD() {
                       <div className="w-full bg-white rounded-full h-1.5">
                         <div className="h-1.5 rounded-full" style={{ width: z.pct + '%', background: z.color }} />
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-1">{z.pct.toFixed(0)}% del mes</div>
+                      <div className="text-[10px] text-gray-400 mt-1">{z.pct.toFixed(0)}% del costo total del mes</div>
                     </div>
                   ))}
                 </div>
