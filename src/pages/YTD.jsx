@@ -16,74 +16,46 @@ const MESES_FULL = {
 }
 
 const ZONA_CLIENTE = {
-  'REYMAR': 'Pun\u00e1', 'PACIMAR': 'Pun\u00e1', 'LANGUISA': 'Pun\u00e1',
-  'NUTRIFEED': 'Jambel\u00ed', 'OCEANAZUL': 'Jambel\u00ed', 'AUSTROMAR': 'Jambel\u00ed',
-  'LIMONVER': 'Jambel\u00ed', 'OCEANMARKET': 'Jambel\u00ed', 'SEVILLA': 'Jambel\u00ed',
-  'MAREEXPORT': 'Jambel\u00ed', 'AGRIMARINE': 'Jambel\u00ed'
+  'REYMAR': 'Puna', 'PACIMAR': 'Puna', 'LANGUISA': 'Puna',
+  'NUTRIFEED': 'Jambeli', 'OCEANAZUL': 'Jambeli', 'AUSTROMAR': 'Jambeli',
+  'LIMONVER': 'Jambeli', 'OCEANMARKET': 'Jambeli', 'SEVILLA': 'Jambeli',
+  'MAREEXPORT': 'Jambeli', 'AGRIMARINE': 'Jambeli'
 }
+
+// Usamos claves sin tildes para evitar problemas de encoding
+const ZONA_LABEL = { 'Jambeli': 'Jambelí', 'Puna': 'Puná' }
 
 function fmt$(n) {
   return '$' + Number(n || 0).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-// Gráfica de barras simple (un solo valor por mes)
-function BarChart({ data, valueKey, color, fmt }) {
-  const max = Math.max(...data.map(d => d[valueKey] || 0), 1)
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '120px', marginTop: '12px' }}>
-      {data.map((d, i) => {
-        const val = d[valueKey] || 0
-        const pct = val / max * 100
-        return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
-            <div style={{ fontSize: '8px', color: '#9ca3af', textAlign: 'center' }}>
-              {val > 0 ? (fmt ? fmt(val) : Math.round(val)) : ''}
-            </div>
-            <div style={{ width: '100%', borderRadius: '3px 3px 0 0', background: val > 0 ? color : '#f3f4f6', height: Math.max(pct, val > 0 ? 4 : 0) + '%', transition: 'height 0.3s' }} />
-            <div style={{ fontSize: '8px', color: '#9ca3af', textAlign: 'center' }}>{MESES[d.mes]}</div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// Gráfica de barras apiladas (dos zonas por mes)
 function BarChartDoble({ data, keyJ, keyP, fmtFn }) {
   const max = Math.max(...data.map(d => (d[keyJ] || 0) + (d[keyP] || 0)), 1)
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '140px', marginTop: '12px' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '5px', height: '130px', marginTop: '10px' }}>
       {data.map((d, i) => {
         const vJ = d[keyJ] || 0
         const vP = d[keyP] || 0
         const total = vJ + vP
-        const pctJ = vJ / max * 100
-        const pctP = vP / max * 100
         const pctTotal = total / max * 100
+        const pctJ = total > 0 ? vJ / total * 100 : 0
+        const pctP = total > 0 ? vP / total * 100 : 0
         return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', height: '100%', justifyContent: 'flex-end' }}>
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', height: '100%', justifyContent: 'flex-end' }}>
             {total > 0 && (
               <div style={{ fontSize: '8px', color: '#6b7280', textAlign: 'center', lineHeight: 1.2 }}>
                 {fmtFn ? fmtFn(total) : Math.round(total)}
               </div>
             )}
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: Math.max(pctTotal, total > 0 ? 4 : 0) + '%' }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: Math.max(pctTotal, total > 0 ? 5 : 0) + '%', borderRadius: '3px 3px 0 0', overflow: 'hidden' }}>
               {vP > 0 && (
-                <div style={{ background: '#22c55e', width: '100%', flex: pctP, borderRadius: vJ === 0 ? '3px 3px 0 0' : '3px 3px 0 0' }}>
-                  {pctP > 8 && (
-                    <div style={{ fontSize: '7px', color: '#fff', textAlign: 'center', paddingTop: '2px' }}>
-                      {fmtFn ? fmtFn(vP) : Math.round(vP)}
-                    </div>
-                  )}
+                <div style={{ background: '#22c55e', width: '100%', flex: pctP, minHeight: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {pctP > 15 && <span style={{ fontSize: '7px', color: '#fff' }}>{fmtFn ? fmtFn(vP) : Math.round(vP)}</span>}
                 </div>
               )}
               {vJ > 0 && (
-                <div style={{ background: '#3b82f6', width: '100%', flex: pctJ, borderRadius: vP === 0 ? '3px 3px 0 0' : '0' }}>
-                  {pctJ > 8 && (
-                    <div style={{ fontSize: '7px', color: '#fff', textAlign: 'center', paddingTop: '2px' }}>
-                      {fmtFn ? fmtFn(vJ) : Math.round(vJ)}
-                    </div>
-                  )}
+                <div style={{ background: '#3b82f6', width: '100%', flex: pctJ, minHeight: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {pctJ > 15 && <span style={{ fontSize: '7px', color: '#fff' }}>{fmtFn ? fmtFn(vJ) : Math.round(vJ)}</span>}
                 </div>
               )}
             </div>
@@ -97,14 +69,14 @@ function BarChartDoble({ data, keyJ, keyP, fmtFn }) {
 
 function Leyenda() {
   return (
-    <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#3b82f6' }} />
-        <span style={{ fontSize: '11px', color: '#6b7280' }}>Jambel\u00ed</span>
+        <span style={{ fontSize: '11px', color: '#6b7280' }}>Jambelí</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#22c55e' }} />
-        <span style={{ fontSize: '11px', color: '#6b7280' }}>Pun\u00e1</span>
+        <span style={{ fontSize: '11px', color: '#6b7280' }}>Puná</span>
       </div>
     </div>
   )
@@ -114,8 +86,8 @@ export default function YTD() {
   const navigate = useNavigate()
   const [datos, setDatos] = useState([])
   const [cargando, setCargando] = useState(true)
-  const [clientesUnicos, setClientesUnicos] = useState([])
-  const [clienteFiltro, setClienteFiltro] = useState('todos')
+  const [clientesJambeli, setClientesJambeli] = useState([])
+  const [clientesPuna, setClientesPuna] = useState([])
 
   useEffect(() => { cargarDatos() }, [])
 
@@ -130,6 +102,7 @@ export default function YTD() {
 
     if (!jornadas) { setCargando(false); return }
 
+    // Mapear fijos por zona (usando nombre exacto de DB)
     const fijosMap = {}
     ;(fijosZona || []).forEach(f => { fijosMap[f.zona] = f })
 
@@ -137,25 +110,25 @@ export default function YTD() {
     for (let m = 1; m <= 12; m++) {
       porMes[m] = {
         mes: m,
-        'Jambel\u00ed': { vuelos: 0, ha: 0, kg: 0, cargas: 0, porCliente: {} },
-        'Pun\u00e1': { vuelos: 0, ha: 0, kg: 0, cargas: 0, porCliente: {} }
+        Jambeli: { vuelos: 0, ha: 0, kg: 0, cargas: 0, porCliente: {} },
+        Puna: { vuelos: 0, ha: 0, kg: 0, cargas: 0, porCliente: {} }
       }
     }
 
     jornadas.forEach(j => {
       const d = new Date(j.fecha + 'T12:00:00')
       const m = d.getMonth() + 1
-      const zona = ZONA_CLIENTE[j.clientes?.nombre?.toUpperCase() || '']
-      if (!zona) return
-      porMes[m][zona].vuelos += j.cantidad_vuelos
-      porMes[m][zona].ha += Number(j.hectareas || 0)
-      porMes[m][zona].kg += Number(j.kg_esparcidos || 0)
-      porMes[m][zona].cargas += Number(j.cargas_baterias || 0)
+      const zonaKey = ZONA_CLIENTE[j.clientes?.nombre?.toUpperCase() || '']
+      if (!zonaKey) return
+      porMes[m][zonaKey].vuelos += j.cantidad_vuelos
+      porMes[m][zonaKey].ha += Number(j.hectareas || 0)
+      porMes[m][zonaKey].kg += Number(j.kg_esparcidos || 0)
+      porMes[m][zonaKey].cargas += Number(j.cargas_baterias || 0)
       const nombre = j.clientes?.nombre || 'Sin cliente'
-      if (!porMes[m][zona].porCliente[nombre]) porMes[m][zona].porCliente[nombre] = { vuelos: 0, ha: 0, kg: 0 }
-      porMes[m][zona].porCliente[nombre].vuelos += j.cantidad_vuelos
-      porMes[m][zona].porCliente[nombre].ha += Number(j.hectareas || 0)
-      porMes[m][zona].porCliente[nombre].kg += Number(j.kg_esparcidos || 0)
+      if (!porMes[m][zonaKey].porCliente[nombre]) porMes[m][zonaKey].porCliente[nombre] = { vuelos: 0, ha: 0, kg: 0 }
+      porMes[m][zonaKey].porCliente[nombre].vuelos += j.cantidad_vuelos
+      porMes[m][zonaKey].porCliente[nombre].ha += Number(j.hectareas || 0)
+      porMes[m][zonaKey].porCliente[nombre].kg += Number(j.kg_esparcidos || 0)
     })
 
     const calcCostoZona = (fijos, cargas, vars) => {
@@ -170,48 +143,62 @@ export default function YTD() {
     }
 
     const resultado = []
+    const acumJambeli = {}
+    const acumPuna = {}
+
     for (let m = 1; m <= 12; m++) {
       const md = porMes[m]
-      const varJ = variables?.find(v => v.mes === m && v.zona === 'Jambel\u00ed')
-      const varP = variables?.find(v => v.mes === m && v.zona === 'Pun\u00e1')
 
-      const costoJ = md['Jambel\u00ed'].vuelos > 0 ? calcCostoZona(fijosMap['Jambel\u00ed'], md['Jambel\u00ed'].cargas, varJ) : 0
-      const costoP = md['Pun\u00e1'].vuelos > 0 ? calcCostoZona(fijosMap['Pun\u00e1'], md['Pun\u00e1'].cargas, varP) : 0
-      const factorJ = md['Jambel\u00ed'].vuelos > 0 ? costoJ / md['Jambel\u00ed'].vuelos : 0
-      const factorP = md['Pun\u00e1'].vuelos > 0 ? costoP / md['Pun\u00e1'].vuelos : 0
+      // Buscar fijos por nombre exacto en DB (con tildes)
+      const fijosJ = fijosMap['Jambelí']
+      const fijosP = fijosMap['Puná']
+      const varJ = variables?.find(v => v.mes === m && v.zona === 'Jambelí')
+      const varP = variables?.find(v => v.mes === m && v.zona === 'Puná')
 
-      const porClienteMonto = {}
-      Object.entries(md['Jambel\u00ed'].porCliente).forEach(([c, v]) => {
-        porClienteMonto[c] = { valor: factorJ * v.vuelos, vuelos: v.vuelos, ha: v.ha, kg: v.kg }
+      const costoJ = md.Jambeli.vuelos > 0 ? calcCostoZona(fijosJ, md.Jambeli.cargas, varJ) : 0
+      const costoP = md.Puna.vuelos > 0 ? calcCostoZona(fijosP, md.Puna.cargas, varP) : 0
+      const factorJ = md.Jambeli.vuelos > 0 ? costoJ / md.Jambeli.vuelos : 0
+      const factorP = md.Puna.vuelos > 0 ? costoP / md.Puna.vuelos : 0
+
+      Object.entries(md.Jambeli.porCliente).forEach(([c, v]) => {
+        const val = factorJ * v.vuelos
+        if (!acumJambeli[c]) acumJambeli[c] = { total: 0, porMes: {} }
+        acumJambeli[c].total += val
+        acumJambeli[c].porMes[m] = val
       })
-      Object.entries(md['Pun\u00e1'].porCliente).forEach(([c, v]) => {
-        porClienteMonto[c] = { valor: factorP * v.vuelos, vuelos: v.vuelos, ha: v.ha, kg: v.kg }
+      Object.entries(md.Puna.porCliente).forEach(([c, v]) => {
+        const val = factorP * v.vuelos
+        if (!acumPuna[c]) acumPuna[c] = { total: 0, porMes: {} }
+        acumPuna[c].total += val
+        acumPuna[c].porMes[m] = val
       })
-
-      const vuelosJ = md['Jambel\u00ed'].vuelos
-      const vuelosP = md['Pun\u00e1'].vuelos
-      const haJ = md['Jambel\u00ed'].ha
-      const haP = md['Pun\u00e1'].ha
-      const kgJ = md['Jambel\u00ed'].kg
-      const kgP = md['Pun\u00e1'].kg
 
       resultado.push({
         mes: m,
-        vuelos: vuelosJ + vuelosP,
-        vuelosJ, vuelosP,
-        ha: haJ + haP,
-        haJ, haP,
-        kg: kgJ + kgP,
-        kgJ, kgP,
+        vuelos: md.Jambeli.vuelos + md.Puna.vuelos,
+        vuelosJ: md.Jambeli.vuelos, vuelosP: md.Puna.vuelos,
+        ha: md.Jambeli.ha + md.Puna.ha,
+        haJ: md.Jambeli.ha, haP: md.Puna.ha,
+        kg: md.Jambeli.kg + md.Puna.kg,
+        kgJ: md.Jambeli.kg, kgP: md.Puna.kg,
         costo: costoJ + costoP,
         costoJ, costoP,
-        costoHa: (haJ + haP) > 0 ? (costoJ + costoP) / (haJ + haP) : 0,
-        porCliente: porClienteMonto
+        costoHa: (md.Jambeli.ha + md.Puna.ha) > 0 ? (costoJ + costoP) / (md.Jambeli.ha + md.Puna.ha) : 0,
       })
     }
 
-    const todosClientes = [...new Set(jornadas.map(j => j.clientes?.nombre).filter(Boolean))].sort()
-    setClientesUnicos(todosClientes)
+    setClientesJambeli(
+      Object.entries(acumJambeli)
+        .filter(([, v]) => v.total > 0)
+        .map(([nombre, v]) => ({ nombre, ...v }))
+        .sort((a, b) => b.total - a.total)
+    )
+    setClientesPuna(
+      Object.entries(acumPuna)
+        .filter(([, v]) => v.total > 0)
+        .map(([nombre, v]) => ({ nombre, ...v }))
+        .sort((a, b) => b.total - a.total)
+    )
     setDatos(resultado)
     setCargando(false)
   }
@@ -231,21 +218,54 @@ export default function YTD() {
   const totalKg = mesesConDatos.reduce((s, d) => s + d.kg, 0)
   const totalKgJ = mesesConDatos.reduce((s, d) => s + d.kgJ, 0)
   const totalKgP = mesesConDatos.reduce((s, d) => s + d.kgP, 0)
+  const totalClientesJ = clientesJambeli.reduce((s, c) => s + c.total, 0)
+  const totalClientesP = clientesPuna.reduce((s, c) => s + c.total, 0)
 
-  const tablaClientes = clientesUnicos.map(c => {
-    const porMesCliente = datos.map(d => ({
-      mes: d.mes,
-      valor: d.porCliente[c]?.valor || 0,
-      vuelos: d.porCliente[c]?.vuelos || 0,
-      ha: d.porCliente[c]?.ha || 0
-    }))
-    const totalValor = porMesCliente.reduce((s, m) => s + m.valor, 0)
-    const totalVuelosC = porMesCliente.reduce((s, m) => s + m.vuelos, 0)
-    const totalHaC = porMesCliente.reduce((s, m) => s + m.ha, 0)
-    return { cliente: c, porMes: porMesCliente, totalValor, totalVuelos: totalVuelosC, totalHa: totalHaC }
-  }).filter(c => c.totalValor > 0).sort((a, b) => b.totalValor - a.totalValor)
-
-  const clienteFiltrado = clienteFiltro === 'todos' ? null : tablaClientes.find(c => c.cliente === clienteFiltro)
+  const renderTablaClientes = (clientes, zonaLabel, colorText, totalZona, getCosto) => (
+    <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-2 h-2 rounded-full" style={{ background: zonaLabel === 'Jambelí' ? '#3b82f6' : '#22c55e' }} />
+        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+          Facturación por cliente — {zonaLabel}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs" style={{ minWidth: '420px' }}>
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Cliente</th>
+              {mesesConDatos.map(d => (
+                <th key={d.mes} className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium px-1">{MESES[d.mes]}</th>
+              ))}
+              <th className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clientes.map(c => (
+              <tr key={c.nombre} className="border-b border-gray-50 last:border-0">
+                <td className="py-2 font-medium">{c.nombre}</td>
+                {mesesConDatos.map(d => (
+                  <td key={d.mes} className="py-2 text-right text-gray-600 px-1">
+                    {c.porMes[d.mes] > 0 ? fmt$(c.porMes[d.mes]) : '—'}
+                  </td>
+                ))}
+                <td className="py-2 text-right font-medium" style={{ color: colorText }}>{fmt$(c.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-gray-200">
+              <td className="pt-3 font-medium">Total {zonaLabel}</td>
+              {mesesConDatos.map(d => (
+                <td key={d.mes} className="pt-3 text-right font-medium px-1">{fmt$(getCosto(d))}</td>
+              ))}
+              <td className="pt-3 text-right font-medium" style={{ color: colorText }}>{fmt$(totalZona)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  )
 
   return (
     <Layout>
@@ -265,226 +285,123 @@ export default function YTD() {
         <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">General</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
           {[
-            { label: 'Costo YTD', value: fmt$(totalCosto), sub: 'acumulado 2026' },
-            { label: 'Vuelos YTD', value: totalVuelos, sub: 'total del ano' },
-            { label: 'Hectareas YTD', value: totalHa.toFixed(0), sub: 'ha aplicadas' },
-            { label: 'KG YTD', value: totalKg.toFixed(0), sub: 'kg esparcidos' },
-            { label: 'Sacos YTD', value: (totalKg / 30).toFixed(0), sub: 'sacos aplicados' },
+            { label: 'Costo YTD', value: fmt$(totalCosto) },
+            { label: 'Vuelos YTD', value: totalVuelos },
+            { label: 'Hectáreas YTD', value: totalHa.toFixed(0) },
+            { label: 'KG YTD', value: totalKg.toFixed(0) },
+            { label: 'Sacos YTD', value: (totalKg / 30).toFixed(0) },
           ].map(k => (
             <div key={k.label} className="bg-gray-50 rounded-xl p-4">
               <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
               <div className="text-xl font-medium text-gray-900">{k.value}</div>
-              <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* KPIs por zona */}
-        {[
-          { zona: 'Jambel\u00ed', costo: totalCostoJ, vuelos: totalVuelosJ, ha: totalHaJ, kg: totalKgJ },
-          { zona: 'Pun\u00e1', costo: totalCostoP, vuelos: totalVuelosP, ha: totalHaP, kg: totalKgP }
-        ].map(z => (
-          <div key={z.zona}>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">{z.zona}</div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
-              {[
-                { label: 'Costo', value: fmt$(z.costo) },
-                { label: 'Vuelos', value: z.vuelos },
-                { label: 'Hectareas', value: z.ha.toFixed(0) },
-                { label: 'KG', value: z.kg.toFixed(0) },
-                { label: 'Sacos', value: (z.kg / 30).toFixed(0) },
-              ].map(k => (
-                <div key={k.label} className="rounded-xl p-4"
-                  style={{ background: z.zona === 'Jambel\u00ed' ? '#eff6ff' : '#f0fdf4' }}>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
-                  <div className="text-xl font-medium text-gray-900">{k.value}</div>
-                </div>
-              ))}
+        {/* KPIs Jambelí */}
+        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Jambelí</div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
+          {[
+            { label: 'Costo', value: fmt$(totalCostoJ) },
+            { label: 'Vuelos', value: totalVuelosJ },
+            { label: 'Hectáreas', value: totalHaJ.toFixed(0) },
+            { label: 'KG', value: totalKgJ.toFixed(0) },
+            { label: 'Sacos', value: (totalKgJ / 30).toFixed(0) },
+          ].map(k => (
+            <div key={k.label} className="rounded-xl p-4" style={{ background: '#eff6ff' }}>
+              <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
+              <div className="text-xl font-medium text-gray-900">{k.value}</div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
-        <div className="mb-2" />
+        {/* KPIs Puná */}
+        <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Puná</div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+          {[
+            { label: 'Costo', value: fmt$(totalCostoP) },
+            { label: 'Vuelos', value: totalVuelosP },
+            { label: 'Hectáreas', value: totalHaP.toFixed(0) },
+            { label: 'KG', value: totalKgP.toFixed(0) },
+            { label: 'Sacos', value: (totalKgP / 30).toFixed(0) },
+          ].map(k => (
+            <div key={k.label} className="rounded-xl p-4" style={{ background: '#f0fdf4' }}>
+              <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">{k.label}</div>
+              <div className="text-xl font-medium text-gray-900">{k.value}</div>
+            </div>
+          ))}
+        </div>
 
-        {/* Gráfica costo operacional — barras apiladas */}
+        {/* Gráficas */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Costo operacional por mes</div>
           <Leyenda />
           <BarChartDoble data={datos} keyJ="costoJ" keyP="costoP" fmtFn={fmt$} />
         </div>
 
-        {/* Vuelos por mes */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">Vuelos por mes</div>
-          <Leyenda />
-          <BarChartDoble data={datos} keyJ="vuelosJ" keyP="vuelosP" />
-        </div>
-
-        {/* Ha por mes */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1">Hectareas por mes</div>
-          <Leyenda />
-          <BarChartDoble data={datos} keyJ="haJ" keyP="haP" fmtFn={v => v.toFixed(0)} />
-        </div>
-
-        {/* Facturación por cliente */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Facturacion por cliente</div>
-            <select value={clienteFiltro} onChange={e => setClienteFiltro(e.target.value)}
-              className="h-8 px-3 border border-gray-200 rounded-lg text-xs outline-none"
-              onFocus={e => e.target.style.borderColor = '#0D6CB0'}
-              onBlur={e => e.target.style.borderColor = '#e5e7eb'}>
-              <option value="todos">Todos los clientes</option>
-              {clientesUnicos.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="bg-white border border-gray-100 rounded-xl p-5">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Vuelos por mes</div>
+            <Leyenda />
+            <BarChartDoble data={datos} keyJ="vuelosJ" keyP="vuelosP" />
           </div>
-
-          {clienteFiltro === 'todos' ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs" style={{ minWidth: '500px' }}>
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Cliente</th>
-                    {mesesConDatos.map(d => (
-                      <th key={d.mes} className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">{MESES[d.mes]}</th>
-                    ))}
-                    <th className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tablaClientes.map(c => {
-                    const zona = ZONA_CLIENTE[c.cliente.toUpperCase()]
-                    return (
-                      <tr key={c.cliente} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2 font-medium">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                              style={{ background: zona === 'Jambel\u00ed' ? '#3b82f6' : '#22c55e' }} />
-                            {c.cliente}
-                          </div>
-                        </td>
-                        {mesesConDatos.map(d => (
-                          <td key={d.mes} className="py-2 text-right text-gray-600">
-                            {c.porMes.find(m => m.mes === d.mes)?.valor > 0
-                              ? fmt$(c.porMes.find(m => m.mes === d.mes)?.valor)
-                              : '\u2014'}
-                          </td>
-                        ))}
-                        <td className="py-2 text-right font-medium" style={{ color: '#0D6CB0' }}>{fmt$(c.totalValor)}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-gray-200">
-                    <td className="pt-3 font-medium">Total</td>
-                    {mesesConDatos.map(d => (
-                      <td key={d.mes} className="pt-3 text-right font-medium">{fmt$(d.costo)}</td>
-                    ))}
-                    <td className="pt-3 text-right font-medium" style={{ color: '#0D6CB0' }}>{fmt$(totalCosto)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          ) : (
-            clienteFiltrado && (
-              <div>
-                <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="text-[10px] uppercase text-gray-400 mb-1">Total facturado</div>
-                    <div className="text-base font-medium" style={{ color: '#0D6CB0' }}>{fmt$(clienteFiltrado.totalValor)}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase text-gray-400 mb-1">Vuelos totales</div>
-                    <div className="text-base font-medium">{clienteFiltrado.totalVuelos}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase text-gray-400 mb-1">Hectareas totales</div>
-                    <div className="text-base font-medium">{clienteFiltrado.totalHa.toFixed(1)}</div>
-                  </div>
-                </div>
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Mes</th>
-                      <th className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Vuelos</th>
-                      <th className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">Ha</th>
-                      <th className="text-right text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium">A facturar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clienteFiltrado.porMes.filter(m => m.valor > 0).map(m => (
-                      <tr key={m.mes} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2 font-medium">{MESES_FULL[m.mes]}</td>
-                        <td className="py-2 text-right">{m.vuelos}</td>
-                        <td className="py-2 text-right">{m.ha.toFixed(1)}</td>
-                        <td className="py-2 text-right font-medium">{fmt$(m.valor)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-gray-200">
-                      <td className="pt-3 font-medium">Total</td>
-                      <td className="pt-3 text-right font-medium">{clienteFiltrado.totalVuelos}</td>
-                      <td className="pt-3 text-right font-medium">{clienteFiltrado.totalHa.toFixed(1)}</td>
-                      <td className="pt-3 text-right font-medium" style={{ color: '#0D6CB0' }}>{fmt$(clienteFiltrado.totalValor)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )
-          )}
+          <div className="bg-white border border-gray-100 rounded-xl p-5">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Hectáreas por mes</div>
+            <Leyenda />
+            <BarChartDoble data={datos} keyJ="haJ" keyP="haP" fmtFn={v => v.toFixed(0)} />
+          </div>
         </div>
 
-        {/* Tabla detalle por mes */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Detalle por mes</div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm" style={{ minWidth: '560px' }}>
-              <thead>
-                <tr className="border-b border-gray-100">
-                  {['Mes', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo', 'Costo/ha', 'Costo/vuelo'].map(h => (
-                    <th key={h} className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium pr-4">{h}</th>
+        {/* Facturación por cliente — dos tablas separadas */}
+        {renderTablaClientes(clientesJambeli, 'Jambelí', '#1e40af', totalClientesJ, d => d.costoJ)}
+        {renderTablaClientes(clientesPuna, 'Puná', '#166534', totalClientesP, d => d.costoP)}
+
+        {/* Detalle por mes — cards estilo dashboard */}
+        <div className="mb-4">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-3">Detalle por mes</div>
+          <div className="flex flex-col gap-3">
+            {datos.filter(d => d.vuelos > 0).map(d => (
+              <div key={d.mes} className="bg-white border border-gray-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-900">{MESES_FULL[d.mes]}</div>
+                  <div className="text-sm font-medium" style={{ color: '#0D6CB0' }}>{fmt$(d.costo)}</div>
+                </div>
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                  {[
+                    { label: 'Vuelos', value: d.vuelos },
+                    { label: 'Hectáreas', value: d.ha.toFixed(0) + ' ha' },
+                    { label: 'KG', value: d.kg.toFixed(0) },
+                    { label: 'Sacos', value: (d.kg / 30).toFixed(1) },
+                  ].map(k => (
+                    <div key={k.label}>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
+                      <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {datos.filter(d => d.vuelos > 0).map(d => (
-                  <tr key={d.mes} className="border-b border-gray-50 last:border-0">
-                    <td className="py-2 text-xs font-medium pr-4">{MESES_FULL[d.mes]}</td>
-                    <td className="py-2 text-xs pr-4">
-                      <div>{d.vuelos}</div>
-                      <div className="text-[10px] text-gray-400">J:{d.vuelosJ} P:{d.vuelosP}</div>
-                    </td>
-                    <td className="py-2 text-xs pr-4">
-                      <div>{d.ha.toFixed(0)}</div>
-                      <div className="text-[10px] text-gray-400">J:{d.haJ.toFixed(0)} P:{d.haP.toFixed(0)}</div>
-                    </td>
-                    <td className="py-2 text-xs pr-4">{d.kg.toFixed(0)}</td>
-                    <td className="py-2 text-xs pr-4">{(d.kg / 30).toFixed(1)}</td>
-                    <td className="py-2 text-xs font-medium pr-4">
-                      <div>{fmt$(d.costo)}</div>
-                      <div className="text-[10px] text-gray-400">J:{fmt$(d.costoJ)} P:{fmt$(d.costoP)}</div>
-                    </td>
-                    <td className="py-2 text-xs pr-4">{fmt$(d.costoHa)}</td>
-                    <td className="py-2 text-xs pr-4">{fmt$(d.vuelos > 0 ? d.costo / d.vuelos : 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-gray-200">
-                  <td className="pt-3 text-xs font-medium">Total</td>
-                  <td className="pt-3 text-xs font-medium">{totalVuelos}</td>
-                  <td className="pt-3 text-xs font-medium">{totalHa.toFixed(0)}</td>
-                  <td className="pt-3 text-xs font-medium">{totalKg.toFixed(0)}</td>
-                  <td className="pt-3 text-xs font-medium">{(totalKg / 30).toFixed(1)}</td>
-                  <td className="pt-3 text-xs font-medium">{fmt$(totalCosto)}</td>
-                  <td className="pt-3 text-xs font-medium">{fmt$(totalHa > 0 ? totalCosto / totalHa : 0)}</td>
-                  <td className="pt-3 text-xs font-medium">{fmt$(totalVuelos > 0 ? totalCosto / totalVuelos : 0)}</td>
-                </tr>
-              </tfoot>
-            </table>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Jambelí', costo: d.costoJ, vuelos: d.vuelosJ, ha: d.haJ, color: '#3b82f6', bg: '#eff6ff', pct: d.costo > 0 ? d.costoJ / d.costo * 100 : 0 },
+                    { label: 'Puná', costo: d.costoP, vuelos: d.vuelosP, ha: d.haP, color: '#22c55e', bg: '#f0fdf4', pct: d.costo > 0 ? d.costoP / d.costo * 100 : 0 },
+                  ].map(z => (
+                    <div key={z.label} className="rounded-lg p-3" style={{ background: z.bg }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium" style={{ color: z.color }}>{z.label}</span>
+                        <span className="text-xs font-medium text-gray-700">{fmt$(z.costo)}</span>
+                      </div>
+                      <div className="flex gap-3 text-[10px] text-gray-400 mb-2">
+                        <span>{z.vuelos} vuelos</span>
+                        <span>{z.ha.toFixed(0)} ha</span>
+                      </div>
+                      <div className="w-full bg-white rounded-full h-1.5">
+                        <div className="h-1.5 rounded-full" style={{ width: z.pct + '%', background: z.color }} />
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-1">{z.pct.toFixed(0)}% del mes</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
