@@ -143,7 +143,7 @@ export default function CostosFijos() {
 
         <div className="mb-6">
           <button onClick={() => navigate('/dashboard')} className="text-xs text-gray-400 hover:text-gray-600 mb-2 block">
-            <- Volver al dashboard
+            &larr; Volver al dashboard
           </button>
           <h1 className="text-2xl font-medium text-gray-900">Configuración de costos fijos</h1>
           <p className="text-sm text-gray-400 mt-1">Año 2026 — costos independientes por dron</p>
