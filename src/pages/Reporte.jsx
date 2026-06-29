@@ -181,7 +181,7 @@ export default function Reporte() {
 
     fill(doc, 2, 40, 71); doc.rect(0, 0, pageW, 50, 'F')
     fill(doc, 13, 108, 176); doc.rect(0, 41, pageW, 9, 'F')
-    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 6, 38, 32)
+    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 8, 28, 22)
     color(doc, 255, 255, 255)
     doc.setFontSize(18); doc.setFont('helvetica', 'bold')
     doc.text('COSTADRON', pageW - 14, 20, { align: 'right' })
@@ -265,7 +265,7 @@ export default function Reporte() {
     // Header pagina 1
     fill(doc, 2, 40, 71); doc.rect(0, 0, pageW, 52, 'F')
     fill(doc, 13, 108, 176); doc.rect(0, 42, pageW, 10, 'F')
-    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 5, 42, 34)
+    if (logoBase64) doc.addImage(logoBase64, 'PNG', 12, 7, 30, 24)
     color(doc, 255, 255, 255)
     doc.setFontSize(20); doc.setFont('helvetica', 'bold')
     doc.text('REPORTE OPERACIONAL', pageW - 14, 18, { align: 'right' })
