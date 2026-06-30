@@ -252,9 +252,10 @@ export default function Dashboard() {
 
     const varJambeli = varsMap['Jambel\u00ed']
     const varPuna = varsMap['Pun\u00e1']
-    const ambosVarGuardados = !!varJambeli && !!varPuna
-    const algunCerrado = varJambeli?.cerrado || varPuna?.cerrado
-    const todosCerrado = varJambeli?.cerrado && varPuna?.cerrado
+    const jambeliAplica = j.jornadas > 0
+    const punaAplica = p.jornadas > 0
+    const ambosVarGuardados = (!jambeliAplica || !!varJambeli) && (!punaAplica || !!varPuna)
+    const todosCerrado = (!jambeliAplica || varJambeli?.cerrado) && (!punaAplica || varPuna?.cerrado)
 
     setResumen({
       totalCosto,
