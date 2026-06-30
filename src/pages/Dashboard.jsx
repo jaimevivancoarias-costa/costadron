@@ -521,11 +521,11 @@ export default function Dashboard() {
 
         {mesYaTermino && !resumen?.cerrado && !cargando && !resumen?.sinDatos && (
           <div className="flex flex-col gap-2 mb-5">
-            {(!varGuardados['Jambel\u00ed'] || !varGuardados['Pun\u00e1']) && (
+            {!resumen?.ambosVarGuardados && (
               <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
                 style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e' }}>
                 <span>&#9888;</span>
-                <span>Faltan costos variables de {!varGuardados['Jambel\u00ed'] ? 'Jambel\u00ed' : ''}{!varGuardados['Jambel\u00ed'] && !varGuardados['Pun\u00e1'] ? ' y ' : ''}{!varGuardados['Pun\u00e1'] ? 'Pun\u00e1' : ''} para cerrar el mes.</span>
+                <span>Faltan costos variables para cerrar el mes.</span>
               </div>
             )}
             {diasDesdeFinMes > 5 && (
