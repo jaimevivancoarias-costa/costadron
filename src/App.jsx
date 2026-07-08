@@ -7,13 +7,13 @@ import Reporte from './pages/Reporte'
 import CostosFijos from './pages/CostosFijos'
 import YTD from './pages/YTD'
 
-function ProtectedRoute({ children, rol }) {
+function ProtectedRoute({ children, roles }) {
   const { session, usuario } = useAuth()
   if (session === undefined || usuario === undefined)
     return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Cargando...</div>
   if (!session) return <Navigate to="/login" replace />
   if (!usuario) return <Navigate to="/login" replace />
-  if (rol && usuario && usuario.rol !== rol) return <Navigate to="/" replace />
+  if (roles && !roles.includes(usuario.rol)) return <Navigate to="/" replace />
   return children
 }
 
@@ -23,7 +23,7 @@ function RootRedirect() {
     return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Cargando...</div>
   if (!session) return <Navigate to="/login" replace />
   if (!usuario) return <Navigate to="/login" replace />
-  return <Navigate to={usuario.rol === 'jefe' ? '/dashboard' : '/jornada'} replace />
+  return <Navigate to={usuario.rol === 'piloto' ? '/jornada' : '/dashboard'} replace />
 }
 
 export default function App() {
@@ -34,20 +34,20 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<RootRedirect />} />
           <Route path="/jornada" element={
-            <ProtectedRoute rol="piloto"><FormularioJornada /></ProtectedRoute>
+            <ProtectedRoute roles={['piloto']}><FormularioJornada /></ProtectedRoute>
           } />
           <Route path="/dashboard" element={
-            <ProtectedRoute rol="jefe"><Dashboard /></ProtectedRoute>
+            <ProtectedRoute roles={['jefe', 'contador']}><Dashboard /></ProtectedRoute>
           } />
           <Route path="/reporte/:anio/:mes" element={
-            <ProtectedRoute rol="jefe"><Reporte /></ProtectedRoute>
+            <ProtectedRoute roles={['jefe', 'contador']}><Reporte /></ProtectedRoute>
           } />
-        <Route path="/costos-fijos" element={
-           <ProtectedRoute rol="jefe"><CostosFijos /></ProtectedRoute>
-         } />
-       <Route path="/ytd" element={
-         <ProtectedRoute rol="jefe"><YTD /></ProtectedRoute>
-         } />
+          <Route path="/costos-fijos" element={
+            <ProtectedRoute roles={['jefe', 'contador']}><CostosFijos /></ProtectedRoute>
+          } />
+          <Route path="/ytd" element={
+            <ProtectedRoute roles={['jefe', 'contador']}><YTD /></ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
