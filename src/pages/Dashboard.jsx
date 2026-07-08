@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { useAuth } from '../context/AuthContext'
 
 const MESES = {
   1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
@@ -60,6 +61,14 @@ export default function Dashboard() {
   const [pilotos, setPilotos] = useState([])
   const [zonas, setZonas] = useState([])
   const navigate = useNavigate()
+
+  // --- Acceso por rol/zona (contador ve solo su zona) ---
+  const { usuario } = useAuth()
+  const esContador = usuario?.rol === 'contador'
+  const zonaUser = usuario?.zona                                  // 'Puná' o 'Jambelí' (con tilde)
+  const ZONAS = ['Jambelí', 'Puná']
+  const zonasVisibles = esContador ? ZONAS.filter(z => z === zonaUser) : ZONAS
+  const pilotosVisibles = esContador ? pilotos.filter(p => p.zona === zonaUser) : pilotos
 
   useEffect(() => {
     const cargarMeses = async () => {
@@ -519,7 +528,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {mesYaTermino && !resumen?.cerrado && !cargando && !resumen?.sinDatos && (
+        {mesYaTermino && !resumen?.cerrado && !cargando && !resumen?.sinDatos && !esContador && (
           <div className="flex flex-col gap-2 mb-5">
             {!resumen?.ambosVarGuardados && (
               <div className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm"
@@ -550,7 +559,8 @@ export default function Dashboard() {
 
         {!cargando && resumen && !resumen.sinDatos && (
           <>
-            {/* KPIs consolidados */}
+            {/* KPIs consolidados (ocultos para contador: mostraría totales de ambas zonas) */}
+            {!esContador && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
               {[
                 { label: 'Costo operacional', value: fmt$(resumen.totalCosto), sub: `${resumen.clientes} clientes` },
@@ -565,9 +575,10 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+            )}
 
             {/* KPIs por zona */}
-            {zonas.map(z => (
+            {zonas.filter(z => zonasVisibles.includes(z.nombre)).map(z => (
               <div key={z.nombre} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
                 {[
                   { label: `${z.nombre} \u2014 Costo`, value: fmt$(z.costo) },
@@ -587,12 +598,7 @@ export default function Dashboard() {
             <div className="mb-3" />
 
             {/* Costos variables por zona */}
-            {!resumen.cerrado && (
-              <>
-                {renderVarsZona('Jambel\u00ed')}
-                {renderVarsZona('Pun\u00e1')}
-              </>
-            )}
+            {!resumen.cerrado && zonasVisibles.map(z => renderVarsZona(z))}
 
             {resumen.cerrado && (
               <div className="bg-white border border-gray-100 rounded-xl p-5 mb-5">
@@ -601,7 +607,7 @@ export default function Dashboard() {
                   <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">Mes cerrado</span>
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-sm">
-                  {['Jambel\u00ed', 'Pun\u00e1'].map(zona => {
+                  {zonasVisibles.map(zona => {
                     const v = costosMes[zona]
                     return v ? (
                       <div key={zona}>
@@ -627,8 +633,8 @@ export default function Dashboard() {
 
             {/* Tablas de facturación por zona */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              {renderTablaClientes(clientesJambeli, 'Jambel\u00ed', zonas.find(z => z.nombre === 'Jambel\u00ed')?.costo || 0)}
-              {renderTablaClientes(clientesPuna, 'Pun\u00e1', zonas.find(z => z.nombre === 'Pun\u00e1')?.costo || 0)}
+              {zonasVisibles.includes('Jambel\u00ed') && renderTablaClientes(clientesJambeli, 'Jambel\u00ed', zonas.find(z => z.nombre === 'Jambel\u00ed')?.costo || 0)}
+              {zonasVisibles.includes('Pun\u00e1') && renderTablaClientes(clientesPuna, 'Pun\u00e1', zonas.find(z => z.nombre === 'Pun\u00e1')?.costo || 0)}
             </div>
 
             {/* Acciones */}
@@ -648,7 +654,7 @@ export default function Dashboard() {
                   Ver resumen anual &#8594;
                 </button>
               </div>
-              {!resumen.cerrado && (
+              {!resumen.cerrado && !esContador && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button
                     onClick={() => setModalCerrar(true)}
@@ -669,11 +675,11 @@ export default function Dashboard() {
         )}
 
         {/* Estado de pilotos */}
-        {pilotos.length > 0 && (
+        {pilotosVisibles.length > 0 && (
           <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4 mb-4">
             <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">Estado de pilotos — {mesLabel}</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {pilotos.map(p => (
+              {pilotosVisibles.map(p => (
                 <div key={p.nombre} className="rounded-xl p-4"
                   style={{ background: p.zona === 'Jambel\u00ed' ? '#eff6ff' : p.zona === 'Pun\u00e1' ? '#f0fdf4' : '#f9fafb' }}>
                   <div className="flex items-center gap-2 mb-3">
