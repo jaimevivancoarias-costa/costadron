@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Reporte from './pages/Reporte'
 import CostosFijos from './pages/CostosFijos'
 import YTD from './pages/YTD'
+import Historial from './pages/Historial'
 
 function ProtectedRoute({ children, roles }) {
   const { session, usuario } = useAuth()
@@ -47,6 +48,9 @@ export default function App() {
           } />
           <Route path="/ytd" element={
             <ProtectedRoute roles={['jefe', 'contador']}><YTD /></ProtectedRoute>
+          } />
+          <Route path="/historial" element={
+            <ProtectedRoute roles={['jefe', 'contador', 'super_admin']}><Historial /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
