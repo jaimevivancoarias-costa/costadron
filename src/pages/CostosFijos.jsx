@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { useAuth } from '../context/AuthContext'
 
 function fmt$(n) {
   return '$' + Number(n || 0).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -39,6 +40,10 @@ const DEFAULTS = {
 
 export default function CostosFijos() {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const esContador = usuario?.rol === 'contador'
+  const zonaUser = usuario?.zona
+  const zonasVisibles = esContador ? ['Jambelí', 'Puná'].filter(z => z === zonaUser) : ['Jambelí', 'Puná']
   const [forms, setForms] = useState({ 'Jambelí': { ...DEFAULTS }, 'Puná': { ...DEFAULTS } })
   const [guardado, setGuardado] = useState({ 'Jambelí': false, 'Puná': false })
   const [cargando, setCargando] = useState(true)
@@ -143,7 +148,7 @@ export default function CostosFijos() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {['Jambelí', 'Puná'].map(zona => {
+          {zonasVisibles.map(zona => {
             const cfg = ZONA_CONFIG[zona]
             const t = calcTotales(zona)
             return (
