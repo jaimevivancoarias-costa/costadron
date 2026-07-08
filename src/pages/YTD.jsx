@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { useAuth } from '../context/AuthContext'
 
 const MESES = {
   1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr',
@@ -91,6 +92,11 @@ function Leyenda() {
 
 export default function YTD() {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const esContador = usuario?.rol === 'contador'
+  const zonaKeyUser = usuario?.zona === 'Puná' ? 'Puna' : 'Jambeli'
+  const verJambeli = !esContador || zonaKeyUser === 'Jambeli'
+  const verPuna = !esContador || zonaKeyUser === 'Puna'
   const [datos, setDatos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [clientesJambeli, setClientesJambeli] = useState([])
@@ -286,7 +292,8 @@ export default function YTD() {
           </div>
         </div>
 
-        {/* KPIs General */}
+        {/* KPIs General (ocultos para contador: totalizan ambas zonas) */}
+        {!esContador && (<>
         <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">General</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
           {[
@@ -303,7 +310,10 @@ export default function YTD() {
           ))}
         </div>
 
+        </>)}
+
         {/* KPIs Jambeli */}
+        {verJambeli && (<>
         <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Jambeli</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
           {[
@@ -320,7 +330,10 @@ export default function YTD() {
           ))}
         </div>
 
+        </>)}
+
         {/* KPIs Puna */}
+        {verPuna && (<>
         <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-2">Puna</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
           {[
@@ -337,7 +350,10 @@ export default function YTD() {
           ))}
         </div>
 
-        {/* Graficas */}
+        </>)}
+
+        {/* Graficas (comparan zonas; ocultas para contador) */}
+        {!esContador && (<>
         <div className="bg-white border border-gray-100 rounded-xl p-5 mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Costo operacional por mes</div>
           <Leyenda />
@@ -357,11 +373,14 @@ export default function YTD() {
           </div>
         </div>
 
-        {/* Facturacion por cliente — dos tablas */}
-        {renderTablaClientes(clientesJambeli, 'Jambeli', '#1e40af', totalClientesJ, d => d.costoJ)}
-        {renderTablaClientes(clientesPuna, 'Puna', '#166534', totalClientesP, d => d.costoP)}
+        </>)}
 
-        {/* Detalle por mes — cards */}
+        {/* Facturacion por cliente — dos tablas */}
+        {verJambeli && renderTablaClientes(clientesJambeli, 'Jambeli', '#1e40af', totalClientesJ, d => d.costoJ)}
+        {verPuna && renderTablaClientes(clientesPuna, 'Puna', '#166534', totalClientesP, d => d.costoP)}
+
+        {/* Detalle por mes — cards (oculto para contador: mezcla ambas zonas) */}
+        {!esContador && (
         <div className="mb-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-3">Detalle por mes</div>
           <div className="flex flex-col gap-3">
@@ -409,6 +428,7 @@ export default function YTD() {
             ))}
           </div>
         </div>
+        )}
 
       </div>
     </Layout>
