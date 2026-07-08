@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { useAuth } from '../context/AuthContext'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -47,6 +48,10 @@ function color(doc, r, g, b) { doc.setTextColor(r, g, b) }
 export default function Reporte() {
   const { anio, mes } = useParams()
   const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const esContador = usuario?.rol === 'contador'
+  const zonaKeyUser = usuario?.zona === 'Puná' ? 'Puna' : 'Jambeli'   // clave interna (sin tilde)
+  const zonaKeysVisibles = esContador ? [zonaKeyUser] : ['Jambeli', 'Puna']
   const [data, setData] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [logoBase64, setLogoBase64] = useState(null)
@@ -282,16 +287,26 @@ export default function Reporte() {
     stroke(doc, 13, 108, 176); doc.setLineWidth(1.5); doc.line(14, y + 3, 70, y + 3)
     y += 8
 
+    // Si es contador, el resumen ejecutivo refleja solo su zona
+    const _z = esContador ? data.zonas[zonaKeyUser] : null
+    const _totCosto  = esContador ? _z.totalCosto : data.totalCosto
+    const _totVuelos = esContador ? _z.totalVuelos : data.totalVuelos
+    const _totHa     = esContador ? _z.totalHa : data.totalHa
+    const _totKg     = esContador ? _z.totalKg : data.totalKg
+    const _costoVuelo = esContador ? (_z.totalVuelos > 0 ? _z.totalCosto / _z.totalVuelos : 0) : data.costoVuelo
+    const _costoHa    = esContador ? (_z.totalHa > 0 ? _z.totalCosto / _z.totalHa : 0) : data.costoHa
+    const _jornadas   = esContador ? _z.jornadas.length : data.jornadas.length
+    const _clientes   = esContador ? _z.clientes.length : data.todosClientes.length
     const kpis = [
-      { label: 'Costo total', value: fmt$(data.totalCosto) },
-      { label: 'Vuelos', value: '' + data.totalVuelos },
-      { label: 'Hectareas', value: data.totalHa.toFixed(1) + ' ha' },
-      { label: 'KG esparcidos', value: data.totalKg.toFixed(0) + ' kg' },
-      { label: 'Sacos', value: (data.totalKg / 30).toFixed(1) },
-      { label: 'Costo/vuelo', value: fmt$(data.costoVuelo) },
-      { label: 'Costo/ha', value: fmt$(data.costoHa) },
-      { label: 'Jornadas', value: '' + data.jornadas.length },
-      { label: 'Clientes', value: '' + data.todosClientes.length },
+      { label: 'Costo total', value: fmt$(_totCosto) },
+      { label: 'Vuelos', value: '' + _totVuelos },
+      { label: 'Hectareas', value: _totHa.toFixed(1) + ' ha' },
+      { label: 'KG esparcidos', value: _totKg.toFixed(0) + ' kg' },
+      { label: 'Sacos', value: (_totKg / 30).toFixed(1) },
+      { label: 'Costo/vuelo', value: fmt$(_costoVuelo) },
+      { label: 'Costo/ha', value: fmt$(_costoHa) },
+      { label: 'Jornadas', value: '' + _jornadas },
+      { label: 'Clientes', value: '' + _clientes },
     ]
     const cW = (pageW - 28 - 8) / 3
     const cH = 20
@@ -316,39 +331,36 @@ export default function Reporte() {
       startY: y,
       head: [['Zona', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo fijo', 'Costo var.', 'Total', 'Costo/vuelo']],
       body: [
-        ['Jambeli',
+        ...(zonaKeysVisibles.includes('Jambeli') ? [['Jambeli',
           data.zonas.Jambeli.totalVuelos, data.zonas.Jambeli.totalHa.toFixed(1),
           data.zonas.Jambeli.totalKg.toFixed(0), (data.zonas.Jambeli.totalKg / 30).toFixed(1),
           fmt$(data.zonas.Jambeli.costoFijo), fmt$(data.zonas.Jambeli.costoVar),
           fmt$(data.zonas.Jambeli.totalCosto),
           fmt$(data.zonas.Jambeli.totalVuelos > 0 ? data.zonas.Jambeli.totalCosto / data.zonas.Jambeli.totalVuelos : 0)
-        ],
-        ['Puna',
+        ]] : []),
+        ...(zonaKeysVisibles.includes('Puna') ? [['Puna',
           data.zonas.Puna.totalVuelos, data.zonas.Puna.totalHa.toFixed(1),
           data.zonas.Puna.totalKg.toFixed(0), (data.zonas.Puna.totalKg / 30).toFixed(1),
           fmt$(data.zonas.Puna.costoFijo), fmt$(data.zonas.Puna.costoVar),
           fmt$(data.zonas.Puna.totalCosto),
           fmt$(data.zonas.Puna.totalVuelos > 0 ? data.zonas.Puna.totalCosto / data.zonas.Puna.totalVuelos : 0)
-        ],
+        ]] : []),
       ],
       headStyles: { fillColor: [2, 40, 71], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', cellPadding: 3.5 },
       bodyStyles: { fontSize: 7.5, cellPadding: 3.5 },
       didParseCell: (hookData) => {
         if (hookData.section === 'body') {
-          if (hookData.row.index === 0) {
-            hookData.cell.styles.fillColor = [239, 246, 255]
-            hookData.cell.styles.textColor = [30, 64, 175]
-          } else {
-            hookData.cell.styles.fillColor = [240, 253, 244]
-            hookData.cell.styles.textColor = [22, 101, 52]
-          }
+          const esJambeli = hookData.row.raw[0] === 'Jambeli'
+          hookData.cell.styles.fillColor = esJambeli ? [239, 246, 255] : [240, 253, 244]
+          hookData.cell.styles.textColor = esJambeli ? [30, 64, 175] : [22, 101, 52]
         }
       },
       margin: { left: 14, right: 14 }
     })
     y = doc.lastAutoTable.finalY + 10
 
-    // Clientes Jambeli
+    // Clientes Jambeli (solo si la zona es visible)
+    if (zonaKeysVisibles.includes('Jambeli')) {
     color(doc, 30, 64, 175); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('CLIENTES JAMBELI', 14, y)
     stroke(doc, 30, 64, 175); doc.setLineWidth(1.5); doc.line(14, y + 3, 72, y + 3)
@@ -370,8 +382,10 @@ export default function Reporte() {
       margin: { left: 14, right: 14 }
     })
     y = doc.lastAutoTable.finalY + 10
+    }
 
-    // Clientes Puna
+    // Clientes Puna (solo si la zona es visible)
+    if (zonaKeysVisibles.includes('Puna')) {
     color(doc, 22, 101, 52); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
     doc.text('CLIENTES PUNA', 14, y)
     stroke(doc, 22, 101, 52); doc.setLineWidth(1.5); doc.line(14, y + 3, 62, y + 3)
@@ -392,6 +406,7 @@ export default function Reporte() {
       columnStyles: { 7: { halign: 'right' }, 8: { halign: 'right' } },
       margin: { left: 14, right: 14 }
     })
+    }
 
     fill(doc, 2, 40, 71); doc.rect(0, pageH - 12, pageW, 12, 'F')
     color(doc, 150, 180, 210); doc.setFontSize(7); doc.setFont('helvetica', 'normal')
@@ -410,7 +425,7 @@ export default function Reporte() {
       { key: 'Puna', label: 'PUNA', hr: [22, 101, 52], hf: [220, 252, 231], tf: [22, 101, 52], alt: [245, 255, 248] },
     ]
 
-    zonaConfigs.forEach(({ key, label, hr, hf, tf, alt }) => {
+    zonaConfigs.filter(({ key }) => zonaKeysVisibles.includes(key)).forEach(({ key, label, hr, hf, tf, alt }) => {
       const z = data.zonas[key]
       color(doc, hr[0], hr[1], hr[2]); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
       doc.text('COSTOS ' + label, 14, y2)
@@ -471,6 +486,7 @@ export default function Reporte() {
           </button>
         </div>
 
+        {!esContador && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
           {[
             { label: 'Costo total', value: fmt$(data.totalCosto), sub: data.todosClientes.length + ' clientes' },
@@ -485,11 +501,12 @@ export default function Reporte() {
             </div>
           ))}
         </div>
+        )}
 
         {[
           { zonaKey: 'Jambeli', label: 'Jambelí', bg: '#eff6ff' },
           { zonaKey: 'Puna', label: 'Puná', bg: '#f0fdf4' }
-        ].map(({ zonaKey, label, bg }) => {
+        ].filter(({ zonaKey }) => zonaKeysVisibles.includes(zonaKey)).map(({ zonaKey, label, bg }) => {
           const z = data.zonas[zonaKey]
           return (
             <div key={zonaKey} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-2">
@@ -513,7 +530,7 @@ export default function Reporte() {
         {[
           { zonaKey: 'Jambeli', label: 'Jambelí', color: '#3b82f6', textColor: '#1e40af' },
           { zonaKey: 'Puna', label: 'Puná', color: '#22c55e', textColor: '#166534' }
-        ].map(({ zonaKey, label, color, textColor }) => {
+        ].filter(({ zonaKey }) => zonaKeysVisibles.includes(zonaKey)).map(({ zonaKey, label, color, textColor }) => {
           const z = data.zonas[zonaKey]
           if (z.clientes.length === 0) return null
           return (
@@ -578,7 +595,7 @@ export default function Reporte() {
         {[
           { zonaKey: 'Jambeli', label: 'Jambelí', color: '#1e40af' },
           { zonaKey: 'Puna', label: 'Puná', color: '#166534' }
-        ].map(({ zonaKey, label, color }) => {
+        ].filter(({ zonaKey }) => zonaKeysVisibles.includes(zonaKey)).map(({ zonaKey, label, color }) => {
           const z = data.zonas[zonaKey]
           if (!z.fijos) return null
           return (
