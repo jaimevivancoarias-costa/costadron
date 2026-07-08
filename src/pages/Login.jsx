@@ -24,10 +24,10 @@ export default function Login() {
       .select('rol')
       .eq('id', data.session.user.id)
       .single()
-    if (usr?.rol === 'jefe') {
-      window.location.href = '/dashboard'
-    } else {
+    if (usr?.rol === 'piloto') {
       window.location.href = '/jornada'
+    } else {
+      window.location.href = '/dashboard'
     }
   }
 
