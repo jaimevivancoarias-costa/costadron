@@ -711,6 +711,21 @@ export default function Dashboard() {
                       </div>
                     ))}
                   </div>
+                  <div className="border-t border-gray-200 pt-2 mt-1 mb-2">
+                    <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Eficiencia</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: 'Sacos/vuelo', value: (p.vuelos > 0 ? p.sacos / p.vuelos : 0).toFixed(2) },
+                        { label: 'Ha/vuelo', value: (p.vuelos > 0 ? p.ha / p.vuelos : 0).toFixed(2) },
+                        { label: 'Vuelos/jornada', value: (p.jornadas > 0 ? p.vuelos / p.jornadas : 0).toFixed(1) },
+                      ].map(k => (
+                        <div key={k.label}>
+                          <div className="text-[10px] uppercase tracking-wider text-gray-400">{k.label}</div>
+                          <div className="text-sm font-medium text-gray-900">{k.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   {p.porCliente && p.porCliente.length > 0 && (
                     <div className="border-t border-gray-200 pt-2 mt-1">
                       <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Desglose por cliente</div>
