@@ -545,7 +545,7 @@ export default function Reporte() {
                 <table className="w-full text-sm" style={{ minWidth: '600px' }}>
                   <thead>
                     <tr className="border-b border-gray-100">
-                      {['Cliente', 'Jornadas', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo/ha', 'A facturar', '%', ''].map(h => (
+                      {['Cliente', 'Jornadas', 'Vuelos', 'Ha', 'KG', 'Sacos', 'Costo/ha', 'Costo/vuelo', 'A facturar', '%', ''].map(h => (
                         <th key={h} className="text-left text-[10px] uppercase tracking-wider text-gray-400 pb-2 font-medium pr-3">{h}</th>
                       ))}
                     </tr>
@@ -560,6 +560,7 @@ export default function Reporte() {
                         <td className="py-2 text-xs pr-3">{c.kg.toFixed(0)}</td>
                         <td className="py-2 text-xs pr-3">{(c.kg / 30).toFixed(1)}</td>
                         <td className="py-2 text-xs pr-3">{fmt$(c.costoHa)}</td>
+                        <td className="py-2 text-xs pr-3">{fmt$(c.vuelos > 0 ? c.valor / c.vuelos : 0)}</td>
                         <td className="py-2 text-xs font-medium pr-3">{fmt$(c.valor)}</td>
                         <td className="py-2 text-xs text-gray-400 pr-3">{c.pct.toFixed(1)}%</td>
                         <td className="py-2">
@@ -580,7 +581,8 @@ export default function Reporte() {
                       <td className="pt-3 text-xs">{z.totalHa.toFixed(1)}</td>
                       <td className="pt-3 text-xs">{z.totalKg.toFixed(0)}</td>
                       <td className="pt-3 text-xs">{(z.totalKg / 30).toFixed(1)}</td>
-                      <td className="pt-3 text-xs"></td>
+                      <td className="pt-3 text-xs font-medium">{fmt$(z.totalHa > 0 ? z.totalCosto / z.totalHa : 0)}</td>
+                      <td className="pt-3 text-xs font-medium">{fmt$(z.totalVuelos > 0 ? z.totalCosto / z.totalVuelos : 0)}</td>
                       <td className="pt-3 text-xs font-medium" style={{ color: textColor }}>{fmt$(z.totalCosto)}</td>
                       <td className="pt-3 text-xs">100%</td>
                       <td></td>
