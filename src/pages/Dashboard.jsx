@@ -657,6 +657,12 @@ export default function Dashboard() {
                   className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
                   Ver historial de cambios &#8594;
                 </button>
+                {!esContador && (
+                  <button onClick={() => navigate('/eficiencia')}
+                    className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-left text-gray-600 hover:bg-gray-50 transition-colors">
+                    Ver eficiencia de pilotos &#8594;
+                  </button>
+                )}
               </div>
               {!resumen.cerrado && !esContador && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
