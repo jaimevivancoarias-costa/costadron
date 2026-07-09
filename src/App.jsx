@@ -7,6 +7,7 @@ import Reporte from './pages/Reporte'
 import CostosFijos from './pages/CostosFijos'
 import YTD from './pages/YTD'
 import Historial from './pages/Historial'
+import Eficiencia from './pages/Eficiencia'
 
 function ProtectedRoute({ children, roles }) {
   const { session, usuario } = useAuth()
@@ -51,6 +52,9 @@ export default function App() {
           } />
           <Route path="/historial" element={
             <ProtectedRoute roles={['jefe', 'contador', 'super_admin']}><Historial /></ProtectedRoute>
+          } />
+          <Route path="/eficiencia" element={
+            <ProtectedRoute roles={['jefe', 'super_admin']}><Eficiencia /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
