@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [varGuardados, setVarGuardados] = useState({ 'Jambel\u00ed': false, 'Pun\u00e1': false })
   const [varEditando, setVarEditando] = useState({ 'Jambel\u00ed': false, 'Pun\u00e1': false })
   const [modalCerrar, setModalCerrar] = useState(false)
+  const [modalReabrir, setModalReabrir] = useState(false)
   const [toast, setToast] = useState('')
   const [cargando, setCargando] = useState(true)
   const [pilotos, setPilotos] = useState([])
@@ -309,6 +310,16 @@ export default function Dashboard() {
       .eq('anio', anio).eq('mes', mes)
     setModalCerrar(false)
     showToast('Mes cerrado.')
+    cargarDatos(periodo)
+  }
+
+  const reabrirMes = async () => {
+    const { anio, mes } = periodo
+    await supabase.from('costos_variables_mes_zona')
+      .update({ cerrado: false })
+      .eq('anio', anio).eq('mes', mes)
+    setModalReabrir(false)
+    showToast('Mes reabierto.')
     cargarDatos(periodo)
   }
 
@@ -680,6 +691,19 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+              {resumen.cerrado && !esContador && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setModalReabrir(true)}
+                    className="w-full h-9 border rounded-lg text-sm font-medium transition-colors"
+                    style={{ borderColor: '#fcd34d', color: '#92400e', background: '#fffbeb' }}>
+                    Reabrir mes
+                  </button>
+                  <div className="text-xs text-gray-400 mt-1.5 text-center">
+                    El mes esta cerrado. Reabrelo si necesitas corregir algo.
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -767,6 +791,30 @@ export default function Dashboard() {
                 <button onClick={cerrarMes}
                   className="h-9 px-4 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors">
                   Si, cerrar {periodo ? MESES[periodo.mes] : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalReabrir && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 max-w-sm w-full">
+              <h2 className="text-base font-medium text-gray-900 mb-2">Reabrir {mesLabel}?</h2>
+              <p className="text-sm text-gray-500 mb-4 leading-relaxed">
+                El mes volvera a quedar abierto para editar jornadas y costos. Podras cerrarlo de nuevo cuando termines. El cambio queda registrado en el historial.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setModalReabrir(false)}
+                  className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={reabrirMes}
+                  className="h-9 px-4 text-white text-sm font-medium rounded-lg transition-colors"
+                  style={{ background: '#0D6CB0' }}
+                  onMouseEnter={e => e.target.style.background = '#064979'}
+                  onMouseLeave={e => e.target.style.background = '#0D6CB0'}>
+                  Si, reabrir {periodo ? MESES[periodo.mes] : ''}
                 </button>
               </div>
             </div>
