@@ -8,46 +8,38 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(undefined)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
+    let subscription
 
-if (accessToken && refreshToken) {
-  supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-    .then(({ data }) => {
-      if (data.session) {
-        setSession(data.session)
+    const init = async () => {
+      // 1) Si venimos del Hub con tokens en la URL, aplicar la sesion PRIMERO
+      const params = new URLSearchParams(window.location.search)
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      if (accessToken && refreshToken) {
+        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         window.history.replaceState({}, '', window.location.pathname)
-      } else {
-        setUsuario(null)
       }
-    })
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-    setSession(s)
-    if (!s) setUsuario(null)
-  })
-
-  return () => subscription.unsubscribe()
-}
-
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+      // 2) Recien ahora leer la sesion (ya establecida por el Hub o por un login previo)
+      const { data } = await supabase.auth.getSession()
+      setSession(data.session ?? null)
       if (!data.session) setUsuario(null)
-    })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s)
-      if (!s) setUsuario(null)
-    })
+      // 3) Y por ultimo suscribirse a cambios de sesion
+      const sub = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s ?? null)
+        if (!s) setUsuario(null)
+      })
+      subscription = sub.data.subscription
+    }
 
-    return () => subscription.unsubscribe()
+    init()
+    return () => { if (subscription) subscription.unsubscribe() }
   }, [])
 
   useEffect(() => {
     if (session === undefined) return
     if (!session) { setUsuario(null); return }
-
     supabase
       .from('usuarios')
       .select('*')
@@ -58,7 +50,6 @@ if (accessToken && refreshToken) {
 
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email, password })
-
   const signOut = () => supabase.auth.signOut()
 
   return (
