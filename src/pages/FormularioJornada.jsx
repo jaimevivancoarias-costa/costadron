@@ -5,10 +5,20 @@ import Layout from '../components/Layout'
 
 const REQUIRED = ['fecha', 'cliente_id', 'cantidad_vuelos', 'kg_esparcidos', 'hectareas']
 
+const MESES = {
+  1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+  7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+}
+
+const keyMes = (anio, mes) => `${anio}-${mes}`
+
 export default function FormularioJornada() {
   const { usuario } = useAuth()
   const [clientes, setClientes] = useState([])
-  const [jornadas, setJornadas] = useState([])
+  const [todas, setTodas] = useState([])
+  const [meses, setMeses] = useState([])
+  const [idx, setIdx] = useState(null)
+  const [cerrados, setCerrados] = useState(new Set())
   const [editId, setEditId] = useState(null)
   const [toast, setToast] = useState('')
   const [toastWarn, setToastWarn] = useState('')
@@ -24,21 +34,52 @@ export default function FormularioJornada() {
   useEffect(() => {
     supabase.from('clientes').select('id, nombre').eq('activo', true).order('nombre')
       .then(({ data }) => setClientes(data || []))
-    cargarJornadas()
+    cargarTodo()
   }, [])
 
-  const cargarJornadas = async () => {
+  const cargarTodo = async () => {
+    const [{ data: js }, { data: cerr }] = await Promise.all([
+      supabase.from('jornadas').select('*, clientes(nombre)')
+        .eq('piloto_id', usuario.id).order('fecha', { ascending: false }),
+      supabase.from('costos_variables_mes_zona').select('anio, mes, cerrado').eq('cerrado', true)
+    ])
+    const lista = js || []
+    setTodas(lista)
+
+    const setCerr = new Set((cerr || []).map(c => keyMes(c.anio, c.mes)))
+    setCerrados(setCerr)
+
+    const unicos = {}
+    lista.forEach(j => {
+      const d = new Date(j.fecha + 'T12:00:00')
+      unicos[keyMes(d.getFullYear(), d.getMonth() + 1)] = { anio: d.getFullYear(), mes: d.getMonth() + 1 }
+    })
     const now = new Date()
-    const desde = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-    const { data } = await supabase
-      .from('jornadas')
-      .select('*, clientes(nombre)')
-      .gte('fecha', desde)
-      .order('fecha', { ascending: false })
-    setJornadas(data || [])
+    unicos[keyMes(now.getFullYear(), now.getMonth() + 1)] = { anio: now.getFullYear(), mes: now.getMonth() + 1 }
+    const listaMeses = Object.values(unicos).sort((a, b) => a.anio !== b.anio ? a.anio - b.anio : a.mes - b.mes)
+    setMeses(listaMeses)
+    setIdx(prev => (prev === null ? listaMeses.length - 1 : prev))
   }
 
+  const periodo = idx !== null && meses.length > 0 ? meses[idx] : null
+  const mesCerrado = periodo ? cerrados.has(keyMes(periodo.anio, periodo.mes)) : false
+  const jornadas = periodo
+    ? todas.filter(j => {
+        const d = new Date(j.fecha + 'T12:00:00')
+        return d.getFullYear() === periodo.anio && d.getMonth() + 1 === periodo.mes
+      })
+    : []
+
+  const mesLabel = periodo ? `${MESES[periodo.mes]} ${periodo.anio}` : ''
+  const puedeAtras = idx !== null && idx > 0
+  const puedeAdelante = idx !== null && idx < meses.length - 1
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const mesDeFecha = (fechaStr) => {
+    const d = new Date(fechaStr + 'T12:00:00')
+    return keyMes(d.getFullYear(), d.getMonth() + 1)
+  }
 
   const validate = () => {
     const e = {}
@@ -53,6 +94,11 @@ export default function FormularioJornada() {
     if (Number(form.hectareas) <= 0) {
       setErrors(e => ({ ...e, hectareas: true }))
       showToast('Las hectáreas deben ser mayor a 0.')
+      return
+    }
+
+    if (cerrados.has(mesDeFecha(form.fecha))) {
+      showToast('Ese mes está cerrado. Pídele al jefe que lo reabra para corregir.')
       return
     }
 
@@ -96,7 +142,7 @@ export default function FormularioJornada() {
     if (error) { showToast('Error al guardar.'); return }
     showToast(editId ? 'Jornada actualizada.' : 'Jornada guardada.')
     limpiar()
-    cargarJornadas()
+    cargarTodo()
   }
 
   const editar = (j) => {
@@ -113,7 +159,7 @@ export default function FormularioJornada() {
   const eliminar = async (id) => {
     await supabase.from('jornadas').delete().eq('id', id)
     if (editId === id) limpiar()
-    cargarJornadas()
+    cargarTodo()
   }
 
   const limpiar = () => {
@@ -122,7 +168,7 @@ export default function FormularioJornada() {
     setErrors({})
   }
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500) }
 
   const minHa = form.minutos_volados && form.hectareas
     ? (Number(form.minutos_volados) / Number(form.hectareas)).toFixed(2)
@@ -216,7 +262,7 @@ export default function FormularioJornada() {
 
         <div className="flex gap-3 justify-end mb-3">
           <button onClick={limpiar} className="h-9 px-4 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition-colors">
-            Limpiar
+            {editId ? 'Cancelar' : 'Limpiar'}
           </button>
           <button
             onClick={guardar}
@@ -257,16 +303,37 @@ export default function FormularioJornada() {
         )}
 
         <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Jornadas del mes</div>
-            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full"
-              style={{ background: '#dbeafe', color: '#1e40af' }}>
-              {jornadas.length} registradas
-            </span>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Jornadas · {mesLabel}</div>
+              {mesCerrado && (
+                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                  style={{ background: '#f1f5f9', color: '#64748b' }}>
+                  Mes cerrado
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setIdx(i => i - 1); limpiar() }} disabled={!puedeAtras}
+                className="h-8 px-3 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                {puedeAtras ? `← ${MESES[meses[idx - 1].mes]}` : '←'}
+              </button>
+              <button onClick={() => { setIdx(i => i + 1); limpiar() }} disabled={!puedeAdelante}
+                className="h-8 px-3 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                {puedeAdelante ? `${MESES[meses[idx + 1].mes]} →` : '→'}
+              </button>
+            </div>
           </div>
 
+          {mesCerrado && (
+            <div className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm mb-4"
+              style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b' }}>
+              Este mes está cerrado. Para corregir algo, pídele al jefe que lo reabra.
+            </div>
+          )}
+
           {jornadas.length === 0 ? (
-            <div className="text-center py-8 text-sm text-gray-400">No hay jornadas registradas este mes.</div>
+            <div className="text-center py-8 text-sm text-gray-400">No hay jornadas registradas en {mesLabel}.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -286,15 +353,21 @@ export default function FormularioJornada() {
                       <td className="py-2.5 px-2 text-right text-xs">{Number(j.kg_esparcidos).toFixed(1)}</td>
                       <td className="py-2.5 px-2 text-right text-xs">{Number(j.hectareas).toFixed(2)}</td>
                       <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                        <button onClick={() => editar(j)} className="text-xs px-2 py-1 rounded transition-colors" style={{ color: '#0D6CB0' }}>Editar</button>
-                        <button onClick={() => eliminar(j.id)} className="text-xs text-gray-300 hover:text-red-400 px-2 py-1 rounded transition-colors ml-1">×</button>
+                        {mesCerrado ? (
+                          <span className="text-xs text-gray-300">—</span>
+                        ) : (
+                          <>
+                            <button onClick={() => editar(j)} className="text-xs px-2 py-1 rounded transition-colors" style={{ color: '#0D6CB0' }}>Editar</button>
+                            <button onClick={() => eliminar(j.id)} className="text-xs text-gray-300 hover:text-red-400 px-2 py-1 rounded transition-colors ml-1">×</button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-gray-200">
-                    <td colSpan={2} className="pt-3 px-2 text-xs text-gray-400 font-medium">Total mes ({jornadas.length} jornadas)</td>
+                    <td colSpan={2} className="pt-3 px-2 text-xs text-gray-400 font-medium">Total ({jornadas.length} jornadas)</td>
                     <td className="pt-3 px-2 text-right text-xs font-medium">{totVuelos}</td>
                     <td className="pt-3 px-2 text-right text-xs font-medium">{totKg.toFixed(1)}</td>
                     <td className="pt-3 px-2 text-right text-xs font-medium">{totHa.toFixed(2)}</td>
@@ -310,7 +383,7 @@ export default function FormularioJornada() {
       {jornadas.length > 0 && (
         <div className="bg-white border border-gray-100 rounded-xl p-5 mt-4">
           <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-4">
-            Tu resumen del mes
+            Tu resumen · {mesLabel}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
@@ -329,8 +402,6 @@ export default function FormularioJornada() {
           </div>
         </div>
       )}
-
-
 
     </Layout>
   )
