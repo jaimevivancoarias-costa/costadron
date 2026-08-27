@@ -70,6 +70,9 @@ export default function Dashboard() {
   const ZONAS = ['Jambelí', 'Puná']
   const zonasVisibles = esContador ? ZONAS.filter(z => z === zonaUser) : ZONAS
   const pilotosVisibles = esContador ? pilotos.filter(p => p.zona === zonaUser) : pilotos
+  const cerradoZonaUser = resumen ? (zonaUser === 'Puná' ? resumen.cerradoPuna : resumen.cerradoJambeli) : false
+  const estaCerrado = esContador ? cerradoZonaUser : (resumen ? resumen.cerrado : false)
+  const puedeGestionarCierre = esContador ? !!varGuardados[zonaUser] : (resumen ? resumen.ambosVarGuardados : false)
 
   useEffect(() => {
     const cargarMeses = async () => {
@@ -277,6 +280,8 @@ export default function Dashboard() {
       costoHa: totalHa > 0 ? totalCosto / totalHa : 0,
       clientes: j.clientesArr.length + p.clientesArr.length,
       cerrado: todosCerrado,
+      cerradoJambeli: !!varJambeli?.cerrado,
+      cerradoPuna: !!varPuna?.cerrado,
       sinDatos: totalJornadas === 0,
       ambosVarGuardados
     })
@@ -305,21 +310,25 @@ export default function Dashboard() {
 
   const cerrarMes = async () => {
     const { anio, mes } = periodo
-    await supabase.from('costos_variables_mes_zona')
+    let q = supabase.from('costos_variables_mes_zona')
       .update({ cerrado: true })
       .eq('anio', anio).eq('mes', mes)
+    if (esContador) q = q.eq('zona', zonaUser)
+    await q
     setModalCerrar(false)
-    showToast('Mes cerrado.')
+    showToast(esContador ? `Mes cerrado (${zonaUser}).` : 'Mes cerrado.')
     cargarDatos(periodo)
   }
 
   const reabrirMes = async () => {
     const { anio, mes } = periodo
-    await supabase.from('costos_variables_mes_zona')
+    let q = supabase.from('costos_variables_mes_zona')
       .update({ cerrado: false })
       .eq('anio', anio).eq('mes', mes)
+    if (esContador) q = q.eq('zona', zonaUser)
+    await q
     setModalReabrir(false)
-    showToast('Mes reabierto.')
+    showToast(esContador ? `Mes reabierto (${zonaUser}).` : 'Mes reabierto.')
     cargarDatos(periodo)
   }
 
@@ -520,10 +529,10 @@ export default function Dashboard() {
             {resumen && (
               <span className="text-[11px] font-medium px-3 py-1 rounded-full"
                 style={{
-                  background: resumen.cerrado ? '#dbeafe' : resumen.sinDatos ? '#f1f5f9' : '#fef3c7',
-                  color: resumen.cerrado ? '#1e40af' : resumen.sinDatos ? '#94a3b8' : '#92400e'
+                  background: estaCerrado ? '#dbeafe' : resumen.sinDatos ? '#f1f5f9' : '#fef3c7',
+                  color: estaCerrado ? '#1e40af' : resumen.sinDatos ? '#94a3b8' : '#92400e'
                 }}>
-                {resumen.cerrado ? 'Mes cerrado' : resumen.sinDatos ? 'Sin datos' : 'Mes abierto'}
+                {estaCerrado ? 'Mes cerrado' : resumen.sinDatos ? 'Sin datos' : 'Mes abierto'}
               </span>
             )}
           </div>
@@ -609,9 +618,9 @@ export default function Dashboard() {
             <div className="mb-3" />
 
             {/* Costos variables por zona */}
-            {!resumen.cerrado && zonasVisibles.map(z => renderVarsZona(z))}
+            {!estaCerrado && zonasVisibles.map(z => renderVarsZona(z))}
 
-            {resumen.cerrado && (
+            {estaCerrado && (
               <div className="bg-white border border-gray-100 rounded-xl p-5 mb-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Costos variables — {mesLabel}</div>
@@ -675,30 +684,32 @@ export default function Dashboard() {
                   </button>
                 )}
               </div>
-              {!resumen.cerrado && !esContador && (
+              {!estaCerrado && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button
                     onClick={() => setModalCerrar(true)}
-                    disabled={!resumen.ambosVarGuardados}
+                    disabled={!puedeGestionarCierre}
                     className="w-full h-9 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ background: '#0D6CB0' }}
-                    onMouseEnter={e => { if (resumen.ambosVarGuardados) e.target.style.background = '#064979' }}
-                    onMouseLeave={e => { if (resumen.ambosVarGuardados) e.target.style.background = '#0D6CB0' }}>
-                    Cerrar mes
+                    onMouseEnter={e => { if (puedeGestionarCierre) e.target.style.background = '#064979' }}
+                    onMouseLeave={e => { if (puedeGestionarCierre) e.target.style.background = '#0D6CB0' }}>
+                    {esContador ? `Cerrar mes (${zonaUser})` : 'Cerrar mes'}
                   </button>
                   <div className="text-xs text-gray-400 mt-1.5 text-center">
-                    {!resumen.ambosVarGuardados ? 'Carga los costos variables de ambas zonas primero' : 'El mes esta listo para cerrar'}
+                    {!puedeGestionarCierre
+                      ? (esContador ? 'Carga los costos variables de tu zona primero' : 'Carga los costos variables de ambas zonas primero')
+                      : 'El mes esta listo para cerrar'}
                   </div>
                 </div>
               )}
-              {resumen.cerrado && !esContador && (
+              {estaCerrado && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button
                     onClick={() => setModalReabrir(true)}
                     className="w-full h-9 border rounded-lg text-sm font-medium transition-colors"
                     style={{ borderColor: '#fcd34d', color: '#92400e', background: '#fffbeb' }}>
-                    Reabrir mes
-                  </button>
+                    {esContador ? `Reabrir mes (${zonaUser})` : 'Reabrir mes'}
+                  </button
                   <div className="text-xs text-gray-400 mt-1.5 text-center">
                     El mes esta cerrado. Reabrelo si necesitas corregir algo.
                   </div>
@@ -776,12 +787,14 @@ export default function Dashboard() {
         {modalCerrar && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl border border-gray-100 p-6 max-w-sm w-full">
-              <h2 className="text-base font-medium text-gray-900 mb-2">Cerrar {mesLabel}?</h2>
+              <h2 className="text-base font-medium text-gray-900 mb-2">Cerrar {mesLabel}{esContador ? ` — ${zonaUser}` : ''}?</h2>
               <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                Esta accion congela todos los datos del mes. No podras modificar jornadas ni costos una vez cerrado.
+                {esContador
+                  ? `Esta accion congela los datos de ${zonaUser} en este mes. No podras modificar sus costos una vez cerrado (podras reabrirlo si hace falta).`
+                  : 'Esta accion congela todos los datos del mes. No podras modificar jornadas ni costos una vez cerrado.'}
               </p>
               <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-gray-500">Total a facturar</span><span className="font-medium">{resumen ? fmt$(resumen.totalCosto) : '-'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Total a facturar</span><span className="font-medium">{esContador ? fmt$(zonas.find(z => z.nombre === zonaUser)?.costo || 0) : (resumen ? fmt$(resumen.totalCosto) : '-')}</span></div>
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setModalCerrar(false)}
@@ -800,9 +813,11 @@ export default function Dashboard() {
         {modalReabrir && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl border border-gray-100 p-6 max-w-sm w-full">
-              <h2 className="text-base font-medium text-gray-900 mb-2">Reabrir {mesLabel}?</h2>
+              <h2 className="text-base font-medium text-gray-900 mb-2">Reabrir {mesLabel}{esContador ? ` — ${zonaUser}` : ''}?</h2>
               <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                El mes volvera a quedar abierto para editar jornadas y costos. Podras cerrarlo de nuevo cuando termines. El cambio queda registrado en el historial.
+                {esContador
+                  ? `${zonaUser} volvera a quedar abierto para editar sus costos. Podras cerrarlo de nuevo cuando termines. El cambio queda registrado en el historial.`
+                  : 'El mes volvera a quedar abierto para editar jornadas y costos. Podras cerrarlo de nuevo cuando termines. El cambio queda registrado en el historial.'}
               </p>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setModalReabrir(false)}
