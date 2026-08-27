@@ -709,7 +709,7 @@ export default function Dashboard() {
                     className="w-full h-9 border rounded-lg text-sm font-medium transition-colors"
                     style={{ borderColor: '#fcd34d', color: '#92400e', background: '#fffbeb' }}>
                     {esContador ? `Reabrir mes (${zonaUser})` : 'Reabrir mes'}
-                  </button
+                  </button>
                   <div className="text-xs text-gray-400 mt-1.5 text-center">
                     El mes esta cerrado. Reabrelo si necesitas corregir algo.
                   </div>
